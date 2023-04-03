@@ -134,3 +134,10 @@
 #+begin_src emacs-lisp :tangle yes :results none
   (provide 'cart)
 #+end_src
+
+* Example
+#+CAPTION: An example of a graphic drawn using =tikz= and =cart.el=
+#+ATTR_HTML: :width 800px
+#+ATTR_LATEX: :width 400px
+#+ATTR_ORG: :width 100px
+[[./test/pg2samp.png]]
