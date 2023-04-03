@@ -19,7 +19,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 1. *Calibration*: Open a latex buffer along with its pdf output with code that plots an arbitrary line ([[https://www.gnu.org/software/auctex/][=AucTex=]] & [[https://github.com/vedang/pdf-tools][pdf-tools]] is recommended, but not required).
    For instance, the following tikz code plots a line from (0,0) to (2,2) (see figure below).
    #+begin_src latex
-     \begin{tikzpicture}[overlay,remember picture]
+     \begin{tikzpicture}
        \pgftransformshift{\pgfpointanchor{current page}{center}}
 
        \draw[->] (0,0) -- (2,2);
