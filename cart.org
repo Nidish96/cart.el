@@ -1,4 +1,4 @@
-#+TITLE: cart.el - CAlibrated inteRactive coordinates for Tex
+#+TITLE: cart.el - CAlibrated inteRactive coordinates for Tikz
 #+LATEX_HEADER: \usepackage{tikz}
 
 * Package Elisp Code
