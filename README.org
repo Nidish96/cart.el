@@ -1,8 +1,16 @@
-#+TITLE: cart.el : CAlibrated inteRactive coordinates for Tikz
+#+TITLE: =cart.el= : CAlibrated inteRactive coordinates for Tikz
 
 * Introduction
+=cart.el= defines interactive elisp functions for obtaining coordinates for tikz commands graphically following a calibration. More detailed documentation and a video demo will be uploaded soon.
+* Configuration
+Configuration is pretty standard. Adding these lines to your emacs startup is all that is needed:
+#+begin_src emacs-lisp :tangle yes
+  (add-to-list 'load-path "<root-directory-of-cart.el>")
+  (require 'cart)
+  (add-hook 'LaTeX-mode-hook 'cart-mode)
+#+end_src
 * Usage
-** Configuration
+Usage is quite straightforward. During the first time, it's recommended to follow these steps:
 ** Example
 #+CAPTION: An example of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
