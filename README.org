@@ -33,7 +33,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 
    In order to calibrate the =cart.el=, call the function =cart-calibrate= (default keybinding set to =C-x a c=) and follow the prompts. It will ask the X & Y coordinates, followed by a prompt to click on the location in the buffer, for the two points.
 
-   /*Note*/: It is not necessary to conduct calibration explicitly each time if the buffer sizes and views will be the same. Once this calibration is done, go to =customize-group -> cart= and save the values of =Cart Xy_0sl= in the customization UI as below.
+   */Note/*: It is not necessary to conduct calibration explicitly each time if the buffer sizes and views will be the same. Once this calibration is done, go to =customize-group -> cart= and save the values of =Cart Xy_0sl= in the customization UI as below.
    #+CAPTION: Saving calibration in the customization UI
    #+ATTR_HTML: :width 600px
    #+ATTR_LATEX: :width 200px
