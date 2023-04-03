@@ -9,10 +9,6 @@
 *.snm
 *.gz
 *.toc
-/art.html
-/art.pdf
-/art.tex
-/cart.el
 /cart.html
 /cart.pdf
 /cart.tex
