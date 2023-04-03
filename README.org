@@ -1,1 +1,13 @@
 #+TITLE: cart.el : CAlibrated inteRactive coordinates for Tikz
+
+* Introduction
+* Usage
+** Configuration
+** Example
+#+CAPTION: An example of a graphic drawn using =tikz= and =cart.el=
+#+ATTR_HTML: :width 800px
+#+ATTR_LATEX: :width 400px
+#+ATTR_ORG: :width 100px
+[[./test/pg2samp.png]]
+* Current Features
+* Possible Improvements
