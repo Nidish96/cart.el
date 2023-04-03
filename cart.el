@@ -112,6 +112,6 @@
   (save-excursion
     (insert (format "\\node%s at " (cart--optbr nopts)))
     (cart-insert-point)
-    (insert (format " \{%s\};" nval))))
+    (insert (format " \{%s\};\n" nval))))
 
 (provide 'cart)
