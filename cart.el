@@ -88,13 +88,13 @@
   (let ((XY (cart--gmc "Click on Point")))
     (message "%s" XY)
     (if XY (progn
-	     (setq xy (cart/XY2xy XY))
-	     (insert (format "(%f, %f)" (elt xy 0) (elt xy 1)))
-	     xy))))
+             (setq xy (cart/XY2xy XY))
+             (insert (format "(%f, %f)" (elt xy 0) (elt xy 1)))
+             xy))))
 
 (defun cart--optbr (&optional opts)
   (if (not (string-empty-p opts))
-    (format "[%s]" opts)
+      (format "[%s]" opts)
     opts))
 
 (defun cart-tikz-draw (&optional dopts nopts)
@@ -109,9 +109,8 @@
 (defun cart-tikz-node (&optional nopts nval)
   "Initiate a tikz \node instance and insert value given by user"
   (interactive "sNode options: \nsNode value: ")
-  (save-excursion
-    (insert (format "\\node%s at " (cart--optbr nopts)))
-    (cart-insert-point)
-    (insert (format " \{%s\};\n" nval))))
+  (insert (format "\\node%s at " (cart--optbr nopts)))
+  (cart-insert-point)
+  (insert (format " \{%s\};\n" nval)))
 
 (provide 'cart)
