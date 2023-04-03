@@ -1,0 +1,123 @@
+\documentclass{beamer}
+
+\usepackage{hyperref}
+\usepackage{qrcode}
+
+\usepackage{tikz}
+
+\usetikzlibrary{shapes.arrows,shapes.callouts,patterns,decorations.pathmorphing,
+  decorations.markings,shapes,arrows.meta,positioning}
+\tikzset{
+  invisible/.style={opacity=0},
+  visible on/.style={alt={#1{}{invisible}}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+  },
+}
+\tikzset{
+  highlight on/.style={alt={#1{fill=red!80!black,color=red!80!black}{fill=gray!30!white,color=gray!30!white}}},
+}
+\tikzset{boximg/.style={remember picture,black,thick,draw,inner sep=0pt,outer sep=0pt}}
+
+\title{Emacs Auctex-art.el test presentation}
+\author{Nidish Narayanaa Balaji}
+
+\begin{document}
+\maketitle{}
+
+\begin{frame}
+  \frametitle{Test Frame}
+
+  \begin{tikzpicture}[overlay,remember picture]
+    \pgftransformshift{\pgfpointanchor{current page}{center}}
+    % \draw (0,0) -- (2,2);
+    \draw[fill=red] (-3.166667, -1.949153)circle[radius=1pt] --
+    (-3.000000, -1.050847)circle[radius=1pt] -- (-2.783333,
+    0.322034)circle[radius=1pt] -- (-2.650000,
+    1.525424)circle[radius=1pt] -- (-2.400000,
+    2.644068)circle[radius=1pt] -- (-2.233333,
+    3.220339)circle[radius=1pt] -- (-1.983333,
+    2.644068)circle[radius=1pt] -- (-1.783333,
+    2.271186)circle[radius=1pt] -- (-1.333333,
+    2.237288)circle[radius=1pt] -- (-0.466667,
+    2.237288)circle[radius=1pt] -- (-0.033333,
+    2.237288)circle[radius=1pt] -- (0.266667,
+    2.016949)circle[radius=1pt] -- (0.433333,
+    2.677966)circle[radius=1pt] -- (0.433333,
+    3.372881)circle[radius=1pt] -- (0.750000,
+    2.745763)circle[radius=1pt] -- (0.866667,
+    1.779661)circle[radius=1pt] -- (0.950000,
+    0.813559)circle[radius=1pt] -- (1.033333,
+    -0.745763)circle[radius=1pt] -- (1.100000,
+    -1.440678)circle[radius=1pt] -- (1.100000,
+    -2.169492)circle[radius=1pt] -- (1.133333,
+    -2.949153)circle[radius=1pt];
+    \draw[fill=red, loop] (-2.283333, 0.254237)circle[radius=1pt] --
+    (-2.033333, 0.237288)circle[radius=1pt] -- (-1.683333,
+    0.220339)circle[radius=1pt] -- (-1.216667,
+    0.135593)circle[radius=1pt] -- (-1.166667,
+    -0.135593)circle[radius=1pt] -- (-0.983333,
+    -0.050847)circle[radius=1pt] -- (-0.883333,
+    0.271186)circle[radius=1pt] -- (-0.666667,
+    0.186441)circle[radius=1pt] -- (0.133333,
+    0.186441)circle[radius=1pt] -- (0.266667,
+    -0.101695)circle[radius=1pt] -- (0.300000,
+    -0.559322)circle[radius=1pt] -- (0.216667,
+    -1.220339)circle[radius=1pt] -- (0.150000,
+    -1.508475)circle[radius=1pt] -- (-0.283333,
+    -1.677966)circle[radius=1pt] -- (-0.933333,
+    -1.694915)circle[radius=1pt] -- (-1.333333,
+    -1.694915)circle[radius=1pt] -- (-1.733333,
+    -1.559322)circle[radius=1pt] -- (-2.116667,
+    -1.355932)circle[radius=1pt] -- (-2.350000,
+    -0.881356)circle[radius=1pt] -- (-2.316667,
+    -0.508475)circle[radius=1pt] -- (-2.266667,
+    -0.322034)circle[radius=1pt] -- (-2.283333,
+    0.254237)circle[radius=1pt];
+    \draw[fill=red] (-2.100000, 1.338983)circle[radius=1pt] --
+    (-1.883333, 1.389831)circle[radius=1pt] -- (-1.616667,
+    1.372881)circle[radius=1pt] -- (-1.500000,
+    1.288136)circle[radius=1pt] -- (-1.666667,
+    1.135593)circle[radius=1pt] -- (-1.816667,
+    1.101695)circle[radius=1pt] -- (-1.933333,
+    1.101695)circle[radius=1pt] -- (-2.066667,
+    1.135593)circle[radius=1pt] -- (-2.216667,
+    1.254237)circle[radius=1pt] -- (-2.116667,
+    1.372881)circle[radius=1pt];
+    \draw[fill=red] (-0.750000, 1.322034)circle[radius=1pt] --
+    (-0.516667, 1.322034)circle[radius=1pt] -- (-0.283333,
+    1.322034)circle[radius=1pt] -- (-0.083333,
+    1.288136)circle[radius=1pt] -- (-0.016667,
+    1.135593)circle[radius=1pt] -- (-0.183333,
+    1.000000)circle[radius=1pt] -- (-0.300000,
+    0.983051)circle[radius=1pt] -- (-0.483333,
+    1.016949)circle[radius=1pt] -- (-0.700000,
+    1.050847)circle[radius=1pt] -- (-0.783333,
+    1.135593)circle[radius=1pt] -- (-0.766667,
+    1.288136)circle[radius=1pt];
+    \draw[fill=red] (-1.800000, -0.423729)circle[radius=1pt] --
+    (-1.650000, -0.864407)circle[radius=1pt] -- (-1.416667,
+    -1.084746)circle[radius=1pt] -- (-0.816667,
+    -1.186441)circle[radius=1pt] -- (-0.500000,
+    -1.050847)circle[radius=1pt] -- (-0.266667,
+    -0.661017)circle[radius=1pt] -- (-0.250000,
+    -0.474576)circle[radius=1pt];
+
+    \draw[->] (3.133333, 3.661017) -- (-1.933333, 3.169492);
+    \draw[->] (3.133333, 3.677966) -- (0.900000, 3.000000);
+    \node[anchor=west] at (3.116667, 3.694915) {Ears!};
+    \node[] at (-1.133333, -2.796610) {Batman};
+    \draw[<->] (-1.850000, 1.525424) -- (-1.866667, 1.949153) --
+    (3.100000, 1.830508) -- (3.000000, 1.271186) -- (3.150000,
+    0.745763) -- (-0.400000, 0.694915) -- (-0.433333, 0.932203);
+    \draw[] (3.000000, 1.288136) -- (3.616667, 1.288136);
+    \node[anchor=south] at (3.933333, 1.237288) {Eyes};
+  \end{tikzpicture}
+\end{frame}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

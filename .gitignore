@@ -1,0 +1,11 @@
+*~
+*log
+*.aux
+/test/auto/
+*.fdb_latexmk
+*.fls
+*.nav
+*.out
+*.snm
+*.gz
+*.toc
