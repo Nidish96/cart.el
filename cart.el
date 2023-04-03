@@ -104,7 +104,7 @@
   (while (cart-insert-point)
     (insert (format "%s -- " nopts)))
   (delete-backward-char 4)
-  (insert ";"))
+  (insert ";\n"))
 
 (defun cart-tikz-node (&optional nopts nval)
   "Initiate a tikz \node instance and insert value given by user"

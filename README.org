@@ -45,12 +45,17 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 3. *Tikz Draw*: Interactive tikz-draw can be initiated by calling =cart-tikz-draw= (default kbd: =C-x a d=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) and "node options" (string options to be passed as =(pt_x, pt_y)options=) before prompting the user to start clicking the desired points. The node options (if given) will be applied to all the points. All the points will be jointed using "=--=" (implying straight lines). The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example. 
 
 4. *Tikz Node*: Interactive tikz-nodes can be initiated by calling =cart-tikz-node= (default kbd: =C-x a n=). It will first prompt the user for "node options" (string options to be passed as =\node[options]=) and "node value" (string value to be passed as =\node[...] at (pt_x, pt_y) {value};=), before prompting the user to choose the point (only one point in this case). 
-** Example
-#+CAPTION: An example of a graphic drawn using =tikz= and =cart.el=
+** Examples
+#+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
 #+ATTR_LATEX: :width 400px
 #+ATTR_ORG: :width 100px
 [[./figs/fig3.png]]
+#+CAPTION: Example 2 of a graphic drawn using =tikz= and =cart.el=
+#+ATTR_HTML: :width 800px
+#+ATTR_LATEX: :width 400px
+#+ATTR_ORG: :width 100px
+[[./figs/fig4.png]]
 * Possible Improvements
 1. It might be interesting to add capabilities to capture mouse drag events and associate them with the curve features of Tikz.
 2. Support for closed figures, fill, etc.
