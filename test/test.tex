@@ -30,7 +30,7 @@
 
   \begin{tikzpicture}[overlay,remember picture]
     \pgftransformshift{\pgfpointanchor{current page}{center}}
-    % \draw (0,0) -- (2,2);
+    \draw (0,0) -- (2,2);
     \draw[fill=red] (-3.166667, -1.949153)circle[radius=1pt] --
     (-3.000000, -1.050847)circle[radius=1pt] -- (-2.783333,
     0.322034)circle[radius=1pt] -- (-2.650000,
@@ -106,12 +106,13 @@
     \draw[->] (3.133333, 3.661017) -- (-1.933333, 3.169492);
     \draw[->] (3.133333, 3.677966) -- (0.900000, 3.000000);
     \node[anchor=west] at (3.116667, 3.694915) {Ears!};
-    \node[] at (-1.133333, -2.796610) {Batman};
+    \node[draw=red] at (-1.133333, -2.796610) {Batman};
     \draw[<->] (-1.850000, 1.525424) -- (-1.866667, 1.949153) --
     (3.100000, 1.830508) -- (3.000000, 1.271186) -- (3.150000,
     0.745763) -- (-0.400000, 0.694915) -- (-0.433333, 0.932203);
     \draw[] (3.000000, 1.288136) -- (3.616667, 1.288136);
     \node[anchor=south] at (3.933333, 1.237288) {Eyes};
+    
   \end{tikzpicture}
 \end{frame}
 

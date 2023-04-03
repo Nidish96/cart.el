@@ -9,3 +9,7 @@
 *.snm
 *.gz
 *.toc
+/art.html
+/art.pdf
+/art.tex
+/cart.el
