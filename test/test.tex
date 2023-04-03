@@ -116,6 +116,15 @@
   \end{tikzpicture}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Test Frame 2}
+  \begin{tikzpicture}[overlay,remember picture]
+    \pgftransformshift{\pgfpointanchor{current page}{center}}
+    
+    \draw[->] (0,0) circle-- (2,2);
+  \end{tikzpicture}
+\end{frame}
+
 \end{document}
 
 %%% Local Variables:

@@ -1,4 +1,5 @@
-#+TITLE: cart.el - CAlibrated inteRactive coordinates for Tikz
+#+TITLE: =cart.el= - CAlibrated inteRactive coordinates for Tikz
+#+STARTUP: indent
 #+LATEX_HEADER: \usepackage{tikz}
 
 * Package Elisp Code
@@ -89,7 +90,7 @@
       ))
 #+end_src
 
-** Wrapper functions for inserting point, tikz-draw, etc.
+** Wrapper functions for inserting a point, tikz-draw, etc.
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart/XY2xy (XY)
     "Transform point from pixels to calibrated coordinate system"

@@ -1,7 +1,12 @@
 #+TITLE: =cart.el= : CAlibrated inteRactive coordinates for Tikz
+#+STARTUP: indent
 
 * Introduction
 =cart.el= defines interactive elisp functions for obtaining coordinates for tikz commands graphically following a calibration. More detailed documentation and a video demo will be uploaded soon.
+
+It must be noted that although =cart.el= improves the interaction/feedback while using Tikz, it is still not exactly WYSIWYG, since the latex file has to be compiled after each insertion of coordinates.
+
+_*Appeal to contributors*_: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it. 
 * Configuration
 Configuration is pretty standard. Adding these lines to your emacs startup is all that is needed:
 #+begin_src emacs-lisp :tangle yes
@@ -11,11 +16,45 @@ Configuration is pretty standard. Adding these lines to your emacs startup is al
 #+end_src
 * Usage
 Usage is quite straightforward. During the first time, it's recommended to follow these steps:
+1. *Calibration*: Open a latex buffer along with its pdf output with code that plots an arbitrary line ([[https://www.gnu.org/software/auctex/][=AucTex=]] & [[https://github.com/vedang/pdf-tools][pdf-tools]] is recommended, but not required).
+   For instance, the following tikz code plots a line from (0,0) to (2,2) (see figure below).
+   #+begin_src latex
+     \begin{tikzpicture}[overlay,remember picture]
+       \pgftransformshift{\pgfpointanchor{current page}{center}}
+
+       \draw[->] (0,0) -- (2,2);
+     \end{tikzpicture}
+   #+end_src
+   #+CAPTION: Sample of the line drawn by the code above
+   #+ATTR_HTML: :width 800px
+   #+ATTR_LATEX: :width 400px
+   #+ATTR_ORG: :width 100px
+   [[./figs/fig1.png]]
+
+   In order to calibrate the =cart.el=, call the function =cart-calibrate= (default keybinding set to =C-x a c=) and follow the prompts. It will ask the X & Y coordinates, followed by a prompt to click on the location in the buffer, for the two points.
+
+   /*Note*/: It is not necessary to conduct calibration explicitly each time if the buffer sizes and views will be the same. Once this calibration is done, go to =customize-group -> cart= and save the values of =Cart Xy_0sl= in the customization UI as below.
+   #+CAPTION: Saving calibration in the customization UI
+   #+ATTR_HTML: :width 600px
+   #+ATTR_LATEX: :width 200px
+   #+ATTR_ORG: :width 50px
+   [[./figs/fig2.png]]
+
+2. *Point Insertion*: You can insert the coordinates of any point at the current point by calling =cart-insert-point= (default kbd: =C-x a p=). It will prompt the user to click on any point on the screen. The pixel coordinates from the read-event will be transformed using the calibration conducted above.
+
+3. *Tikz Draw*: Interactive tikz-draw can be initiated by calling =cart-tikz-draw= (default kbd: =C-x a d=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) and "node options" (string options to be passed as =(pt_x, pt_y)options=) before prompting the user to start clicking the desired points. The node options (if given) will be applied to all the points. All the points will be jointed using "=--=" (implying straight lines). The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example. 
+
+4. *Tikz Node*: Interactive tikz-nodes can be initiated by calling =cart-tikz-node= (default kbd: =C-x a n=). It will first prompt the user for "node options" (string options to be passed as =\node[options]=) and "node value" (string value to be passed as =\node[...] at (pt_x, pt_y) {value};=), before prompting the user to choose the point (only one point in this case). 
 ** Example
 #+CAPTION: An example of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
 #+ATTR_LATEX: :width 400px
 #+ATTR_ORG: :width 100px
-[[./test/pg2samp.png]]
-* Current Features
+[[./figs/fig3.png]]
 * Possible Improvements
+1. It might be interesting to add capabilities to capture mouse drag events and associate them with the curve features of Tikz.
+2. Support for closed figures, fill, etc.
+3. Some mechanism simulating real-time feedback. 
+* Recommended Reading/Interesting Repositories
+1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
+2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
