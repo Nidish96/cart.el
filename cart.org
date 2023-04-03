@@ -1,7 +1,8 @@
 #+TITLE: cart.el - CAlibrated inteRactive coordinates for Tex
 #+LATEX_HEADER: \usepackage{tikz}
 
-* Define Minor-Mode and Global Variables
+* Package Elisp Code
+** Define Minor-Mode and Global Variables
 #+begin_src emacs-lisp :tangle yes :results none 
   (defcustom cart--XY_0sl '((X . (0.0 1.0))
 			  (Y . (0.0 1.0)))
@@ -37,7 +38,7 @@
     (add-hook 'cart-mode-off-hook (lambda () (message "cart mode hook was execd off"))))
 #+end_src
 
-* Define functions for getting coordinates on screen
+** Define functions for getting coordinates on screen
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart--gmc (&optional prompt)
     "Returns the xy points of clicked point (if clicked) as a cons block"
@@ -57,7 +58,7 @@
       (list x y)))
 #+end_src
 
-* Wrapper functions for calibration
+** Wrapper functions for calibration
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart--xy2x0sl (x y)
     "Convert list of x and y points to x0 (intercept) and sl (slope)"
@@ -88,7 +89,7 @@
       ))
 #+end_src
 
-* Wrapper functions for inserting point, tikz-draw, etc.
+** Wrapper functions for inserting point, tikz-draw, etc.
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart/XY2xy (XY)
     "Transform point from pixels to calibrated coordinate system"
@@ -129,7 +130,7 @@
       (insert (format " \{%s\};" nval))))
 #+end_src
 
-* Provide as PACKAGE
+** Provide as PACKAGE
 #+begin_src emacs-lisp :tangle yes :results none
   (provide 'cart)
 #+end_src
