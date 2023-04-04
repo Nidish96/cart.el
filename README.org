@@ -58,9 +58,10 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 [[./figs/fig4.png]]
 * Possible Improvements
 1. It might be interesting to add capabilities to capture mouse drag events and associate them with the curve features of Tikz.
-2. Support for closed figures, fill, etc.
-3. Some mechanism simulating real-time feedback. 
-4. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
+2. Support for modifying existing objects.
+3. Making node information for each point possible as an option (instead of having to click on successive points repeatedly and have common node properties).
+4. Some mechanism simulating real-time feedback. 
+5. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
