@@ -113,4 +113,48 @@
   (cart-insert-point)
   (insert (format " \{%s\};\n" nval)))
 
+(defun cart--last-open-paren (&optional pos)
+  "Returns the last open paren that the current point lies in.
+Optional argument POS allows user to specify point (other that current).
+
+Code from this stackoverflow answer: https://emacs.stackexchange.com/a/10405"
+  (let ((ppss (syntax-ppss (or pos (point)))))
+    (when (nth 1 ppss) (char-after (nth 1 ppss)))))
+
+(defun cart--translate (&optional dx dy)
+  "Conduct rigid body movement on current object.
+DX, DY are x (horizontal) and y (vertical translation.
+
+BUG: sentence doesn't seem to mean what we expected.
+Do we want to include rotations also?"
+  (search-forward ")")
+  (let ((ptst (beginning-of-thing 'sentence))
+        (pten (save-excursion (end-of-thing 'sentence))))
+    (while (setq p0 (search-forward "(" pten t))
+      (if (cart--last-open-paren (1- p0))
+          (goto-char (1+ (point)))
+        (setq p1 (1- (search-forward ")" pten)))
+        (setq cds
+              (mapcar 'string-to-number
+                      (split-string
+                       (buffer-substring p0 p1) ",")))
+        (delete-region p0 p1)
+        (goto-char p0)
+        (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
+        (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
+        (insert (mapconcat 'number-to-string cds ","))
+        (setq pten (save-excursion (end-of-thing 'sentence)))))))
+
+(defun cart-move-object ()
+  "Move objects in current sentence or under region using two points."
+  (interactive)
+  (let ((xy0 (cart/XY2xy (cart--gmc "Click on reference point")))
+        (xy1 (cart/XY2xy (cart--gmc "Click on target point"))))
+    (setq dx (- (elt xy0 0) (elt xy1 0)))
+    (setq dy (- (elt xy0 1) (elt xy1 1)))
+
+    (if (region-active-p)
+        (message "gotta check all sentences in region")
+      (cart--translate dx dy))))
+
 (provide 'cart)
