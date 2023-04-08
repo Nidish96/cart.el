@@ -64,3 +64,4 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
+3. The [[https://github.com/dalanicolai/pymupdf-mode.el][pymupdf-mode]] implements a version of WYSIWYG drawing using python and zathura. I personally feel that a more elegant solution using pure elisp is possible.
