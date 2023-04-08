@@ -198,19 +198,20 @@ RNDS is a boolean governing whether node contents should be rotated or not."
   (when rnds
     (goto-char (point-min))
     (while (search-forward "node" nil t)
-      (if (not (eq (char-after) (string-to-char "[")))
-          (insert (format "[rotate=%f]" (radians-to-degrees tht)))
-        (let ((ebr (save-excursion (search-forward "]"))))
-          (if (search-forward "rotate" ebr t)
-              (progn
-                (right-word)
-                (let ((nwang (+ (number-at-point) (radians-to-degrees tht))))
-                  (skip-chars-backward "0-9.-")
-                  (delete-region (point) (progn (skip-chars-forward "0-9.-") (point)))
-                  (insert (format "%f" nwang)))
-                (goto-char ebr))
-            (goto-char (1- ebr))
-            (insert (format ", rotate=%f" (radians-to-degrees tht)))))))))
+      (unless (cart--last-open-paren)
+        (if (not (eq (char-after) (string-to-char "[")))
+            (insert (format "[rotate=%f]" (radians-to-degrees tht)))
+          (let ((ebr (save-excursion (search-forward "]"))))
+            (if (search-forward "rotate" ebr t)
+                (progn
+                  (right-word)
+                  (let ((nwang (+ (number-at-point) (radians-to-degrees tht))))
+                    (skip-chars-backward "0-9.-")
+                    (delete-region (point) (progn (skip-chars-forward "0-9.-") (point)))
+                    (insert (format "%f" nwang)))
+                  (goto-char ebr))
+              (goto-char (1- ebr))
+              (insert (format ", rotate=%f" (radians-to-degrees tht))))))))))
 
 (defun cart-translate-tikz ()
   "Translate objects in current sentence or under region using two points."

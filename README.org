@@ -58,9 +58,18 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 [[./figs/fig4.png]]
 * Possible Improvements
 1. It might be interesting to add capabilities to capture mouse drag events and associate them with the curve features of Tikz.
-2. Making node information for each point possible as an option (instead of having to click on successive points repeatedly and have common node properties).
-3. Some mechanism simulating real-time feedback. 
-4. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
+2. Integration of Tikz/Pgf variables.
+3. Making node information for each point in draw possible as an option (instead of having to click on successive points repeatedly and have common node properties).
+4. Some mechanism simulating real-time feedback.
+
+   Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
+   #+begin_src emacs-lisp :tangle yes
+     (make-frame-on-current-monitor '((minibuffer . nil)
+                                      (fullscreen . maximized)
+                                      (mode-line-format . nil)
+                                      (alpha . 0)))
+   #+end_src
+5. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
