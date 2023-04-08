@@ -132,22 +132,17 @@ Code from this stackoverflow answer: https://emacs.stackexchange.com/a/10405"
     (while (cart--last-open-paren (search-backward "\\"))))
   (point))
 
-(defun cart--translate (&optional dx dy ptst pten) 
+(defun cart--translate (&optional dx dy) 
   "Conduct rigid body movement on current object.
 DX, DY are x (horizontal) and y (vertical translation.
 
 BUG: sentence doesn't seem to mean what we expected.
 Do we want to include rotations also?"
-  (search-forward ")")
-  (unless ptst
-    (setq ptst (cart--goto-begend)))
-  (unless pten
-    (setq pten (save-excursion (cart--goto-begend t))))
-  (goto-char ptst)
-  (while (setq p0 (search-forward "(" pten t))
+  (goto-char (point-min))
+  (while (setq p0 (search-forward "(" (point-max) t))
     (if (cart--last-open-paren (1- p0))
         (goto-char (1+ (point)))
-      (setq p1 (1- (search-forward ")" pten)))
+      (setq p1 (1- (search-forward ")")))
       (setq cds
             (mapcar 'string-to-number
                     (split-string
@@ -156,9 +151,7 @@ Do we want to include rotations also?"
       (goto-char p0)
       (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
       (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
-      (insert (mapconcat 'number-to-string cds ","))
-      (setq pten (save-excursion (goto-char pten)
-                   (cart--goto-begend t))))))
+      (insert (mapconcat 'number-to-string cds ",")))))
 
 (defun cart-move-object ()
   "Move objects in current sentence or under region using two points."
@@ -176,7 +169,11 @@ Do we want to include rotations also?"
     (setq dy (- (elt xy1 1) (elt xy0 1)))
 
     (if (region-active-p)
-        (message "gotta check all sentences in region")
-      (cart--translate dx dy))))
+        (narrow-to-region (region-beginning) (region-end))
+      (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+    (cart--translate dx dy)
+    (widen)
+    ))
 
 (provide 'cart)
