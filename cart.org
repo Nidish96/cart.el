@@ -42,20 +42,25 @@
 ** Define functions for getting coordinates on screen
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart--gmc (&optional prompt)
-    "Returns the xy points of clicked point (if clicked) as a cons block"
-    (let* ((event (read-event (or prompt "Click anywhere"))))
-      (if (string-equal (car-or event) "down-mouse-1")
-	  (progn
-	    (read-event)  ;; read the mouse up event
-	    (setq pos (event-start event))
-	    (setq xy (posn-x-y pos))
-	    (mapcar 'float (list (car xy) (cdr xy)))))))
+    "Returns the xy points of clicked point (if clicked) as a list, or,
+  start and end points of dragged region (if dragged) as a list of lists."
+    (if (string-equal (car-or (read-event (or prompt "Click anywhere"))) "down-mouse-1")
+        (progn
+          (setq event (read-event))  ;; read the mouse up/drag event
+          (setq pos (event-start event))
+          (setq pose (event-end event))
+          (setq xy (posn-x-y pos))
+          (setq xye (posn-x-y pose))
+          (if (eq pos pose)
+              (mapcar 'float (list (car xy) (cdr xy)))
+            (list (mapcar 'float (list (car xy) (cdr xy)))
+                  (mapcar 'float (list (car xye) (cdr xye))))))))
 
   (defun cart--2dc (&optional prompt)
     "Returns 2D coordinates as a cons block"
     (interactive)
     (let ((x (float (read-number (format "(%s): Enter X coordinate: " prompt) 0)))
-	  (y (float (read-number (format "(%s): Enter Y coordinate: " prompt) 0))))
+          (y (float (read-number (format "(%s): Enter Y coordinate: " prompt) 0))))
       (list x y)))
 #+end_src
 
@@ -140,37 +145,54 @@
     (let ((ppss (syntax-ppss (or pos (point)))))
       (when (nth 1 ppss) (char-after (nth 1 ppss)))))
 
-  (defun cart--translate (&optional dx dy)
+  (defun cart--goto-begend (&optional enflg)
+    (if enflg
+        (while (cart--last-open-paren (search-forward ";")))
+      (while (cart--last-open-paren (search-backward "\\"))))
+    (point))
+
+  (defun cart--translate (&optional dx dy ptst pten) 
     "Conduct rigid body movement on current object.
   DX, DY are x (horizontal) and y (vertical translation.
 
   BUG: sentence doesn't seem to mean what we expected.
   Do we want to include rotations also?"
     (search-forward ")")
-    (let ((ptst (beginning-of-thing 'sentence))
-          (pten (save-excursion (end-of-thing 'sentence))))
-      (while (setq p0 (search-forward "(" pten t))
-        (if (cart--last-open-paren (1- p0))
-            (goto-char (1+ (point)))
-          (setq p1 (1- (search-forward ")" pten)))
-          (setq cds
-                (mapcar 'string-to-number
-                        (split-string
-                         (buffer-substring p0 p1) ",")))
-          (delete-region p0 p1)
-          (goto-char p0)
-          (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
-          (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
-          (insert (mapconcat 'number-to-string cds ","))
-          (setq pten (save-excursion (end-of-thing 'sentence)))))))
+    (unless ptst
+      (setq ptst (cart--goto-begend)))
+    (unless pten
+      (setq pten (save-excursion (cart--goto-begend t))))
+    (goto-char ptst)
+    (while (setq p0 (search-forward "(" pten t))
+      (if (cart--last-open-paren (1- p0))
+          (goto-char (1+ (point)))
+        (setq p1 (1- (search-forward ")" pten)))
+        (setq cds
+              (mapcar 'string-to-number
+                      (split-string
+                       (buffer-substring p0 p1) ",")))
+        (delete-region p0 p1)
+        (goto-char p0)
+        (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
+        (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
+        (insert (mapconcat 'number-to-string cds ","))
+        (setq pten (save-excursion (goto-char pten)
+                     (cart--goto-begend t))))))
 
   (defun cart-move-object ()
     "Move objects in current sentence or under region using two points."
     (interactive)
-    (let ((xy0 (cart/XY2xy (cart--gmc "Click on reference point")))
-          (xy1 (cart/XY2xy (cart--gmc "Click on target point"))))
-      (setq dx (- (elt xy0 0) (elt xy1 0)))
-      (setq dy (- (elt xy0 1) (elt xy1 1)))
+    (let* ((XYs (cart--gmc "Click & drag from start point to end point"))
+           (XY0 (elt XYs 0))
+           (XY1 (elt XYs 1)))
+      (unless (listp XY0)
+        (setq XY0 XYs)
+        (setq XY1 (cart--gmc "You had only clicked on one point. Please click target point now")))
+      (setq xy0 (cart/XY2xy XY0))
+      (setq xy1 (cart/XY2xy XY1))
+
+      (setq dx (- (elt xy1 0) (elt xy0 0)))
+      (setq dy (- (elt xy1 1) (elt xy0 1)))
 
       (if (region-active-p)
           (message "gotta check all sentences in region")
