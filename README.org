@@ -69,6 +69,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
                                       (mode-line-format . nil)
                                       (alpha . 0)))
    #+end_src
+   Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
 5. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
