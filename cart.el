@@ -5,7 +5,7 @@
 ;; Author: Nidish Narayanaa Balaji <nidbid@gmail.com>
 ;; Keywords: tex, mouse
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1") (company-auctex "20200529.1835"))
+;; Package-Requires: ((emacs "25.1"))
 ;; URL: https://github.com/Nidish96/cart.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -72,6 +72,10 @@ The behavior will be identical across sessions if these are saved."
         (cons (cart--key "t") #'cart-translate-tikz)
         (cons (cart--key "r") #'cart-rotate-tikz)))
 
+(defun cart--car-or (ARG)
+  "Return car of ARG if ARG is a cons, ARG otherwise."
+  (if (consp ARG) (car ARG) ARG))
+
 (defun cart--gmc (&optional prompt)
   "Prompt to click on frame and return the xy coordinates.
 Two behaviors are possible: (if clicked) single point returned as a
@@ -80,7 +84,8 @@ dragged region returned as a list of two point-lists (as above).
 
 The optional parameter PROMPT allows one to specify a user-facing
 prompt.  The prompt defaults to 'Click anywhere' if not provided."
-  (if (string-equal (car-or (read-event (or prompt "Click anywhere")))
+  (if (string-equal (cart--car-or (read-event
+                                   (or prompt "Click anywhere")))
                     "down-mouse-1")
       (let* ((event (read-event))  ;; read the mouse up/drag event
              (pos (event-start event))
