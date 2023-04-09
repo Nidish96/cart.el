@@ -1,3 +1,46 @@
+;;; cart.el --- CAlibrated inteRactive coordinates for Tikz       -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2023  Nidish Narayanaa Balaji
+
+;; Author: Nidish Narayanaa Balaji <nidbid@gmail.com>
+;; Keywords: tex, mouse
+;; Version: 0.0.1
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; cart.el provides convenient function definitions meant to be used
+;; in tandem with auctex and some pdf viewer within emacs (like
+;; pdf-tools). The main purpose is to speed up inserting and editing
+;; graphical objects using Tikz/Pgf on latex documents/(beamer)
+;; presentations.
+
+;; So far there is support for inserting Tikz draw and
+;; node objects, and conducting rigid body translations and
+;; rotations on these objects. The way to use this would be to first
+;; calibrate the coordinate system by clicking on two points and
+;; providing their coordinate values. This allows the package to
+;; establish the coordinate mapping between the pixel coordinates on
+;; the frame to the Tikz/Pgf coordinates meant to be inputted. The
+;; relevant calibration variable is customizable. So after a
+;; particular calibration, if the user feels that the same view can be
+;; used across sessions, then it may be saved in the customize
+;; interface. See more in the README.org file.
+
+;; Code:
+
 (defcustom cart--XY_0sl '((X . (0.0 1.0))
                         (Y . (0.0 1.0)))
   "These are the calibration values"
@@ -275,3 +318,4 @@ RNDS is a boolean governing whether node contents should be rotated or not."
       (widen))))
 
 (provide 'cart)
+;;; cart.el ends here

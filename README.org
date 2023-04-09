@@ -63,11 +63,11 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 4. Some mechanism simulating real-time feedback.
 
    Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
-   #+begin_src emacs-lisp :tangle yes
+   #+begin_src emacs-lisp :results none
      (make-frame-on-current-monitor '((minibuffer . nil)
                                       (fullscreen . maximized)
                                       (mode-line-format . nil)
-                                      (alpha . 0)))
+                                      (alpha . (100 . 10))))
    #+end_src
    Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
 5. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
