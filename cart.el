@@ -47,11 +47,16 @@
                         (Y . (0.0 1.0)))
   "These are the calibration values.
 The behavior will be identical across sessions if these are saved."
-  :group 'cart
-  :type 'cons)
+  :type 'cons
+  :group 'cart)
 
 (defcustom cart-keymap-prefix "C-x a"
   "The prefix for `cart-mode' key bindings."
+  :type 'string
+  :group 'cart)
+
+(defcustom cart--nfmt "%f"
+  "Format specifier for the numbers. Defaults to \"%f\"."
   :type 'string
   :group 'cart)
 
@@ -153,7 +158,10 @@ prompt.   Defaults to \"Click on Point\"."
   (interactive)
   (let ((XY (cart--gmc prompt)))
     (if XY (let ((xy (cart--XY2xy XY)))
-             (insert (format "(%f, %f)" (elt xy 0) (elt xy 1)))
+             (insert
+              (format
+               (concat "(" cart--nfmt ", " cart--nfmt ")")
+               (elt xy 0) (elt xy 1)))
              xy))))
 
 (defun cart--optbr (&optional opts)
@@ -267,7 +275,7 @@ translation values."
         (goto-char p0)
         (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
         (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
-        (insert (mapconcat 'number-to-string cds ","))))))
+        (insert (format (concat cart--nfmt ", " cart--nfmt) (elt cds 0) (elt cds 1)))))))
 
 (defun cart--rotate (&optional tht cpt rnds)
   "Conduct rigid body rotation on current context.
@@ -300,14 +308,15 @@ RNDS is a boolean governing whether node contents should be rotated or not."
                (Sth (sin (or tht 0)))
                (Tcds (list (+ (- (* Cth (elt cdsrel 0)) (* Sth (elt cdsrel 1))) (or (elt cpt 0) 0))
                            (+ (+ (* Sth (elt cdsrel 0)) (* Cth (elt cdsrel 1))) (or (elt cpt 1) 0)))))
-          (insert (mapconcat 'number-to-string Tcds ","))))))
+          (insert (format (concat cart--nfmt ", " cart--nfmt) (elt Tcds 0) (elt Tcds 1)))))))
   ;; Rotate nodes too, if needed
   (when rnds
     (goto-char (point-min))
     (while (search-forward "node" nil t)
       (unless (cart--last-open-paren)
         (if (not (eq (char-after) (string-to-char "[")))
-            (insert (format "[rotate=%f]" (radians-to-degrees tht)))
+            (insert (format (concat "[rotate=" cart--nfmt "]")
+                            (radians-to-degrees tht)))
           (let ((ebr (save-excursion (search-forward "]"))))
             (if (search-forward "rotate" ebr t)
                 (progn
@@ -315,10 +324,11 @@ RNDS is a boolean governing whether node contents should be rotated or not."
                   (let ((nwang (+ (number-at-point) (radians-to-degrees tht))))
                     (skip-chars-backward "0-9.-")
                     (delete-region (point) (progn (skip-chars-forward "0-9.-") (point)))
-                    (insert (format "%f" nwang)))
+                    (insert (format cart--nfmt nwang)))
                   (goto-char ebr))
               (goto-char (1- ebr))
-              (insert (format ", rotate=%f" (radians-to-degrees tht))))))))))
+              (insert (format (concat ", rotate=" cart--nfmt)
+                              (radians-to-degrees tht))))))))))
 
 (defun cart-translate-tikz ()
   "Translate objects in current Tikz/Pgf statement/region.
