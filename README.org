@@ -58,23 +58,23 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 
 
 #+CAPTION: Default Keybindings
-| Keybinding     | Command               |
-|----------------+-----------------------|
-| C-x a          | cart-keymap-prefix    |
-| C-x a c        | cart-calibrate        |
-|----------------+-----------------------|
-| Insertion      |                       |
-|----------------+-----------------------|
-| C-x a p        | cart-insert-point     |
-| C-x a n        | cart-tikz-node        |
-| C-x a d        | cart-tikz-draw        |
-| C-x a c        | cart-tikz-coordinates |
-|----------------+-----------------------|
-| Transformation |                       |
-|----------------+-----------------------|
-| C-x a t        | cart-translate-tikz   |
-| C-x a r        | cart-rotate-tikz      |
-| C-x a s        | cart-scale-tikz       |
+| Keybinding       | Command               | Description                 |
+|------------------+-----------------------+-----------------------------|
+| C-x a            | cart-keymap-prefix    | Not callable.               |
+| C-x a c          | cart-calibrate        | Initiate Calibration.       |
+|------------------+-----------------------+-----------------------------|
+| *Insertion*      |                       |                             |
+|------------------+-----------------------+-----------------------------|
+| C-x a p          | cart-insert-point     | Insert single point.        |
+| C-x a n          | cart-tikz-node        | Insert Tikz node.           |
+| C-x a d          | cart-tikz-draw        | Insert Tikz draw.           |
+| C-x a c          | cart-tikz-coordinates | Insert Tikz coordinates.    |
+|------------------+-----------------------+-----------------------------|
+| *Transformation* |                       |                             |
+|------------------+-----------------------+-----------------------------|
+| C-x a t          | cart-translate-tikz   | Translate region/statement. |
+| C-x a r          | cart-rotate-tikz      | Rotate region/statement.    |
+| C-x a s          | cart-scale-tikz       | Scale region/statement.     |
 ** Examples
 #+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
