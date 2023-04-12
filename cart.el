@@ -56,9 +56,12 @@ The behavior will be identical across sessions if these are saved."
   :group 'cart)
 
 (defcustom cart--nfmt "%f"
-  "Format specifier for the numbers. Defaults to \"%f\"."
+  "Format specifier for the numbers.  Defaults to \"%f\"."
   :type 'string
   :group 'cart)
+
+(defvar cart--prev-pt nil
+  "Previous point inserted in current session.")
 
 (defun cart--key (key)
   "Prefix keymap-prefix to KEY and construct keybinding."
@@ -72,10 +75,12 @@ The behavior will be identical across sessions if these are saved."
   :keymap
   (list (cons (cart--key "c") #'cart-calibrate)
         (cons (cart--key "p") #'cart-insert-point)
-        (cons (cart--key "d") #'cart-tikz-draw)
         (cons (cart--key "n") #'cart-tikz-node)
+        (cons (cart--key "d") #'cart-tikz-draw)
+        (cons (cart--key "c") #'cart-tikz-coordinates)
         (cons (cart--key "t") #'cart-translate-tikz)
-        (cons (cart--key "r") #'cart-rotate-tikz)))
+        (cons (cart--key "r") #'cart-rotate-tikz)
+        (cons (cart--key "s") #'cart-scale-tikz)))
 
 (defun cart--car-or (ARG)
   "Return car of ARG if ARG is a cons, ARG otherwise."
@@ -190,7 +195,7 @@ options respectively. The user receives prompts for populating these."
   (insert (format "\\draw%s " (cart--optbr dopts)))
   (while (cart-insert-point "Click on a point (RET to stop insertion)")
     (insert (format "%s -- " nopts)))
-  (if (y-or-n-p "Insert first point at the end?")
+  (if (y-or-n-p "Insert first point in the end (manual closed path)?")
       (progn
         (cart--goto-begend)
         (search-forward "(")
@@ -218,6 +223,31 @@ the node options and node value respectively."
   (insert (format " \{%s\};" nval))
   (do-auto-fill))
 
+(defun cart-tikz-coordinates (&optional dopts)
+  "Initiate a tikz \\draw plot [smooth] and insert points.
+Start with prompting the user for draw options.  Format for the
+  insertion is:
+     \\draw[DOPTS] plot [smooth] coordinates {(x1, y1) (x2, y2) (x3, y3) ...};
+  The user hits RET to finish inserting points.  Finally a prompt shows
+up checking if the user wants the coordinates to loop.
+
+Optional input parameter DOPTS is a string of draw options.  The user
+  receives a prompt for populating these."
+  (interactive "sDraw options: ")
+  (insert (format "\\draw%s plot [smooth] coordinates {" (cart--optbr dopts)))
+  (while (cart-insert-point "Click on a point (RET to stop insertion)")
+    (insert " "))
+  (save-excursion
+    (when (y-or-n-p "Closed path?")
+      (progn
+        (cart--goto-begend)
+        (search-forward "[smooth]")
+        (left-char 1)
+        (insert " cycle"))))
+  (delete-char -1)
+  (insert "};")
+  (do-auto-fill))
+
 (defun cart--last-open-paren (&optional pos)
   "Return the last open paren that the current point lies in.
 
@@ -228,6 +258,25 @@ Code originally from this stackoverflow answer:
 https://emacs.stackexchange.com/a/10405"
   (let ((ppss (syntax-ppss (or pos (point)))))
     (when (nth 1 ppss) (char-after (nth 1 ppss)))))
+
+(defun cart--tfm-skip (&optional pos)
+  "Return t if current point (or POS) can be skipped for transformation.
+Transformation includes translate & rotate as implemented in
+`cart--translate' and `cart--rotate' functions for
+`cart-translate-tikz' and `cart-rotate-tikz' respectively.
+It works by requiring either that the point is at the top (not bound
+by any parens), or if bound by \"{...}\", it must belong to a
+coordinate set (as in `cart-tikz-smooth').
+
+Optional input parameter POS allows user to specify point (defaults to
+  \"(point)\")."
+  (let ((lopa (cart--last-open-paren (or pos (point)))))
+    (when (char-equal (or lopa ?\0) ?\{)
+      (not (string-equal (save-excursion
+                           (search-backward "{")
+                           (left-word)
+                           (word-at-point))
+                         "coordinates")))))
 
 (defun cart--goto-begend (&optional enflg)
   "Move pointer to either the beginning or end of current statement.
@@ -251,6 +300,14 @@ y components of the vectors."
         (Sth (- (* (elt vec1 0) (elt vec2 1)) (* (elt vec2 0) (elt vec1 1)))))
     (atan Sth Cth)))
 
+(defun cart--norm (vec)
+  "Return the 2-norm of vector.
+Vector given as a list.
+
+Input parameter VEC is a two-number-list storing the x and y components
+of the vector."
+  (sqrt (apply '+ (mapcar (lambda (x) (expt x 2)) vec))))
+
 (defun cart--translate (&optional dx dy)
   "Conduct rigid body translation on current context.
 The context is generated through narrow.  It is important for context
@@ -262,7 +319,7 @@ translation values."
   (goto-char (point-min))
   (let ((p0) (p1) (cds))
     (while (setq p0 (search-forward "(" (point-max) t))
-      (if (cart--last-open-paren (1- p0))
+      (if (cart--tfm-skip (1- p0))
           (goto-char (1+ (point)))
         (setq p1 (1- (search-forward ")")))
         (setq cds
@@ -290,7 +347,7 @@ RNDS is a boolean governing whether node contents should be rotated or not."
   (goto-char (point-min))
   (let ((p0) (p1) (cds))
     (while (setq p0 (search-forward "(" (point-max) t))
-      (if (cart--last-open-paren (1- p0))
+      (if (cart--tfm-skip (1- p0))
           (goto-char (1+ (point)))
         (setq p1 (1- (search-forward ")")))
         (setq cds
@@ -330,6 +387,55 @@ RNDS is a boolean governing whether node contents should be rotated or not."
               (insert (format (concat ", rotate=" cart--nfmt)
                               (radians-to-degrees tht))))))))))
 
+(defun cart--scale (&optional sc cpt snds)
+  "Conduct scaling in the current context.
+The context is generated through narrow.  It is important for context
+to start from the first object's \"\\\" character and end at the
+last object's \";\" character.
+
+Optional input parameters control the amount/type of rotations.
+SC is scaling factor;
+CPT is a list storing center point coordinates; and
+SNDS is a boolean governing whether node contents should be scaled or not."
+  (goto-char (point-min))
+  (let ((p0) (p1) (cds))
+    (while (setq p0 (search-forward "(" (point-max) t))
+      (if (cart--tfm-skip (1- p0))
+          (goto-char (1+ (point)))
+        (setq p1 (1- (search-forward ")")))
+        (setq cds
+              (mapcar 'string-to-number
+                      (split-string
+                       (replace-regexp-in-string
+                        "\n" "" (buffer-substring p0 p1))
+                       ",")))
+        (delete-region p0 p1)
+        (goto-char p0)
+        ;; Relative coordinates & Rotation
+        (let* ((cdsrel (list (- (elt cds 0) (or (elt cpt 0) 0))
+                             (- (elt cds 1) (or (elt cpt 1) 0))))
+               (Tcds (mapcar (lambda (i) (+ (* (elt cdsrel i) sc) (elt cpt i))) '(0 1))))
+          (insert (format (concat cart--nfmt ", " cart--nfmt) (elt Tcds 0) (elt Tcds 1)))))))
+  ;; Scale nodes too, if needed
+  (when snds
+    (goto-char (point-min))
+    (while (search-forward "node" nil t)
+      (unless (cart--last-open-paren)
+        (if (not (eq (char-after) (string-to-char "[")))
+            (insert (format (concat "[scale=" cart--nfmt "]") sc))
+          (let ((ebr (save-excursion (search-forward "]"))))
+            (if (search-forward "scale" ebr t)
+                (progn
+                  (right-word)
+                  (let ((nwang (* (number-at-point) sc)))
+                    (skip-chars-backward "0-9.-")
+                    (delete-region (point) (progn (skip-chars-forward "0-9.-") (point)))
+                    (insert (format cart--nfmt nwang)))
+                  (goto-char ebr))
+              (goto-char (1- ebr))
+              (insert (format (concat ", scale=" cart--nfmt) sc)))))))))
+
+
 (defun cart-translate-tikz ()
   "Translate objects in current Tikz/Pgf statement/region.
 This works by first calling `narrow-to-region', followed by a call
@@ -349,7 +455,8 @@ trget point."
          (XY1 (elt XYs 1)))
     (unless (listp XY0)
       (setq XY0 XYs)
-      (setq XY1 (cart--gmc "You had only clicked on one point. Please click target point now")))
+      (setq XY1 (cart--gmc
+                 "You had only clicked on one point. Please click target point now")))
 
     (let* ((xy0 (cart--XY2xy XY0))
            (xy1 (cart--XY2xy XY1))
@@ -402,7 +509,8 @@ exists, it is inserted."
          (xyref (if XYref (cart--XY2xy XYref) (list 0 0))))
     (unless (listp XY0)
       (setq XY0 XYs)
-      (setq XY1 (cart--gmc "You had only clicked on one point. Please click target point now")))
+      (setq XY1 (cart--gmc
+                 "You had only clicked on one point. Please click target point now")))
 
     (let* ((xy0 (cart--XY2xy XY0))
            (xy1 (cart--XY2xy XY1))
@@ -416,6 +524,61 @@ exists, it is inserted."
         (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
 
       (cart--rotate theta xyref rnds)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (move-end-of-line nil)
+        (do-auto-fill)
+        (forward-line))
+      (do-auto-fill)
+      (widen))))
+
+(defun cart-scale-tikz ()
+  "Scale objects in current Tikz/Pgf statement/region.
+This works by first calling `narrow-to-region', followed by a call to
+`cart--scale'.  If a region is not chosen, the current statement
+\(bound by \"\\\", \";\") is used for the narrow.  If a region is
+chosen, the region is used for the narrow.  It is important for the
+region to start from the first object's \"\\\" character and end at
+the last object's \";\" character.
+
+The user is prompted to click on the center of scaling, then to click
+and drag the scaling target points.  The scaling factor is calculated
+as the ratio of the distances of the target points from the center
+point.  If the user fails to drag, another prompt is launched asking
+the user to click on the target point.
+
+After the coordinate values are modified, the user is prompted to say
+whether the node contents must be scaled too or not.  The \"scale\"
+field of the nodes (which comes in Tikz/Pgf) is used for this.  If no
+options are present for a node, \"[scale=SC]\" is inserted (where
+SC is the scaling factor).  If options are present for a node, and
+a scale field already exists, the existing value is replaced by its
+product with SC.  If options are present for a node, and no scale field
+exists, it is inserted."
+  (interactive)
+  (let* ((XYref (cart--gmc "Click on the center of scaling (RET to use origin) "))
+         (XYs (cart--gmc "Click and drag the scaling target points "))
+         (snds (y-or-n-p "Scale Node contents too?"))
+         (XY0 (elt XYs 0))
+         (XY1 (elt XYs 1))
+         (xyref (if XYref (cart--XY2xy XYref) (list 0 0))))
+    (unless (listp XY0)
+      (setq XY0 XYs)
+      (setq XY1 (cart--gmc
+                 "You had only clicked on one point. Please click target point now")))
+
+    (let* ((xy0 (cart--XY2xy XY0))
+           (xy1 (cart--XY2xy XY1))
+           ;; Relative Coordinates
+           (xy0 (list (- (elt xy0 0) (elt xyref 0)) (- (elt xy0 1) (elt xyref 1))))
+           (xy1 (list (- (elt xy1 0) (elt xyref 0)) (- (elt xy1 1) (elt xyref 1))))
+           (sc (/ (cart--norm xy1) (cart--norm xy0))))
+
+      (if (region-active-p)
+          (narrow-to-region (region-beginning) (region-end))
+        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+      (cart--scale sc xyref snds)
       (goto-char (point-min))
       (while (not (eobp))
         (move-end-of-line nil)

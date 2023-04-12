@@ -7,6 +7,7 @@
 It must be noted that although =cart.el= improves the interaction/feedback while using Tikz, it is still not exactly WYSIWYG, since the latex file has to be compiled after each insertion of coordinates.
 
 *_Appeal to contributors_*: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it. 
+
 * Configuration
 Configuration is pretty standard. Adding these lines to your emacs startup is all that is needed:
 #+begin_src emacs-lisp :tangle yes
@@ -14,9 +15,10 @@ Configuration is pretty standard. Adding these lines to your emacs startup is al
   (require 'cart)
   (add-hook 'LaTeX-mode-hook 'cart-mode)
 #+end_src
+
 * Usage
 Usage is quite straightforward. During the first time, it's recommended to follow these steps:
-1. *Calibration*: Open a latex buffer along with its pdf output with code that plots an arbitrary line ([[https://www.gnu.org/software/auctex/][=AucTex=]] & [[https://github.com/vedang/pdf-tools][pdf-tools]] is recommended, but not required).
+1. *Calibration*: Open a latex buffer along with its pdf output with code that plots an arbitrary line ([[https://www.gnu.org/software/auctex/][=AucTex=]] & [[https://github.com/vedang/pdf-tools][=pdf-tools=]] is recommended, but not required).
    For instance, the following tikz code plots a line from (0,0) to (2,2) (see figure below).
    #+begin_src latex
      \begin{tikzpicture}
@@ -40,11 +42,39 @@ Usage is quite straightforward. During the first time, it's recommended to follo
    #+ATTR_ORG: :width 50px
    [[./figs/fig2.png]]
 
-2. *Point Insertion*: You can insert the coordinates of any point at the current point by calling =cart-insert-point= (default kbd: =C-x a p=). It will prompt the user to click on any point on the screen. The pixel coordinates from the read-event will be transformed using the calibration conducted above.
+2. *Insertion: Point*: You can insert the coordinates of any point at the current point by calling =cart-insert-point= (default kbd: =C-x a p=). It will prompt the user to click on any point on the screen. The pixel coordinates from the read-event will be transformed using the calibration conducted above.
 
-3. *Tikz Draw*: Interactive tikz-draw can be initiated by calling =cart-tikz-draw= (default kbd: =C-x a d=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) and "node options" (string options to be passed as =(pt_x, pt_y)options=) before prompting the user to start clicking the desired points. The node options (if given) will be applied to all the points. All the points will be jointed using "=--=" (implying straight lines). The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example. 
+3. *Insertion: Tikz Draw*: Interactive tikz-draw can be initiated by calling =cart-tikz-draw= (default kbd: =C-x a d=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) and "node options" (string options to be passed as =(pt_x, pt_y)options=) before prompting the user to start clicking the desired points. The node options (if given) will be applied to all the points. All the points will be jointed using "=--=" (implying straight lines). The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example. 
 
-4. *Tikz Node*: Interactive tikz-nodes can be initiated by calling =cart-tikz-node= (default kbd: =C-x a n=). It will first prompt the user for "node options" (string options to be passed as =\node[options]=) and "node value" (string value to be passed as =\node[...] at (pt_x, pt_y) {value};=), before prompting the user to choose the point (only one point in this case). 
+4. *Insertion: Tikz Node*: Interactive tikz-nodes can be initiated by calling =cart-tikz-node= (default kbd: =C-x a n=). It will first prompt the user for "node options" (string options to be passed as =\node[options]=) and "node value" (string value to be passed as =\node[...] at (pt_x, pt_y) {value};=), before prompting the user to choose the point (only one point in this case).
+
+5. *Insertion: Tikz Draw Plot Coordinates*: Interactive tikz-draw plot coordinates can be initiated by calling =cart-tikz-coordinates= (default kbd: =C-x a c=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) before prompting the user to start clicking the desired points. The argument =[smooth]= will be passed to plot. The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example.
+
+6. *Transformation: Translation*: Either start by choosing a region (ensure you start from the first "\" statement and select until the last ";" character) or having point inside any Tikz/Pgf command statement bound by "\" & ";". Now call =cart-translate-tikz= (default kbd: =C-x a t=) and select the start and end points by either dragging or clicking sequentially.
+
+7. *Transformation: Rotation*: Start just like for translation. Now call =cart-rotate-tikz= (default kbd: =C-x a r=) and select the center point, and start-end points by dragging/clicking sequentially. A prompt will come asking if the node contents should also be rotated (handled through the Tikz =rotate= fields of the nodes). Rotation will be conducted so as to move the start point feature to the end point.
+
+8. *Transformation: Scaling*: Start just like for translation. Now call =cart-scale-tikz= (default kbd: =C-x a s=) and select the reference point, and start-end points by dragging/clicking sequentially. A prompt will come asking if the node contents should also be rotated (handled through the Tikz =rotate= fields of the nodes). Scaling will be conducted so as to move the start point feature to the end point.
+
+
+#+CAPTION: Default Keybindings
+| Keybinding     | Command               |
+|----------------+-----------------------|
+| C-x a          | cart-keymap-prefix    |
+| C-x a c        | cart-calibrate        |
+|----------------+-----------------------|
+| Insertion      |                       |
+|----------------+-----------------------|
+| C-x a p        | cart-insert-point     |
+| C-x a n        | cart-tikz-node        |
+| C-x a d        | cart-tikz-draw        |
+| C-x a c        | cart-tikz-coordinates |
+|----------------+-----------------------|
+| Transformation |                       |
+|----------------+-----------------------|
+| C-x a t        | cart-translate-tikz   |
+| C-x a r        | cart-rotate-tikz      |
+| C-x a s        | cart-scale-tikz       |
 ** Examples
 #+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
@@ -56,21 +86,34 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 #+ATTR_LATEX: :width 400px
 #+ATTR_ORG: :width 100px
 [[./figs/fig4.png]]
+
 * Possible Improvements
 1. It might be interesting to add capabilities to capture mouse drag events and associate them with the curve features of Tikz.
 2. Integration of Tikz/Pgf variables.
 3. Making node information for each point in draw possible as an option (instead of having to click on successive points repeatedly and have common node properties).
-4. Some mechanism simulating real-time feedback.
+4. =cart-scale-tikz= currently doesn't scale circle radius fields. Fixing this just for circles seems easy enough but something more general would be better.
+5. Some mechanism simulating real-time feedback.
+   
+   Two ideas for this:
+   1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
+      This becomes quite attractive from Emacs 29, which allows explicitly setting background transparency independent of the foreground as follows (following only works in emacs 29+).
+      #+begin_src emacs-lisp :results none
+        (setq nfrm (make-frame-on-current-monitor '((fullscreen . maximized)
+                                                    (alpha-background . 80))))
 
-   Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
-   #+begin_src emacs-lisp :results none
-     (make-frame-on-current-monitor '((minibuffer . nil)
-                                      (fullscreen . maximized)
-                                      (mode-line-format . nil)
-                                      (alpha . (100 . 10))))
-   #+end_src
-   Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
-5. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
+        (select-frame nfrm)
+        (find-file "cart.el drawing buffer")
+        (artist-mode)
+        (setq-local mode-line-format nil)
+      #+end_src
+      Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
+
+   2. Using GNOME's built-in mouse location feature. Calling the following command, for instance, will make the mouse location get highlighted each time lCtrl is pressed. This is an out-of-emacs solution, but sounds simple, if setup well.
+      #+begin_src sh
+        gsettings set org.gnome.desktop.interface locate-pointer true
+      #+end_src
+6. Using the relative coordinates with respect to the pdf page directly (the screen pixel coordinates are used currently) could add robustness.
+
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
