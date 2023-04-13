@@ -88,7 +88,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 [[./figs/fig4.png]]
 
 ** Personal Tips for Beamer
-Since it is often the case in presentations to want graphical objects "pop-up" independent of the remaining content on the slide, I use the following preamble in each of my tex files to define a "remember picture" style:
+Since it is often the case in presentations to want graphical objects "pop-up" independent of the remaining content on the slide, I use the following preamble in each of my tex files:
 #+begin_src latex
   \usepackage{tikz}
 
@@ -101,12 +101,8 @@ Since it is often the case in presentations to want graphical objects "pop-up" i
       \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
     },
   }
-  \tikzset{
-    highlight on/.style={alt={#1{fill=red!80!black,color=red!80!black}{fill=gray!30!white,color=gray!30!white}}},
-  }
-  \tikzset{boximg/.style={remember picture,black,thick,draw,inner sep=0pt,outer sep=0pt}}
 #+end_src
-Apart from remember picture, the above also enables the "visible on" property for all the tikz objects, where you can specify overlay information.
+The above enables the "visible on" property for all the tikz objects, where you can specify overlay information.
 
 I often have my tikzpicture environment setup in the following fashion so that its centered at the middle of the page. An example may be found in the [[file:test/test.tex][test folder]].
 #+begin_src latex
