@@ -71,7 +71,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 | C-x a n          | cart-tikz-node        | Insert Tikz node.               |
 | C-x a d          | cart-tikz-draw        | Insert Tikz draw.               |
 | C-x a e          | cart-tikz-circle      | Insert Tikz circle (with draw). |
-| C-x a r          | cart-tikz-coordinates | Insert Tikz coordinates.        |
+| C-x a c          | cart-tikz-coordinates | Insert Tikz coordinates.        |
 |------------------+-----------------------+---------------------------------|
 | *Transformation* |                       |                                 |
 |------------------+-----------------------+---------------------------------|
