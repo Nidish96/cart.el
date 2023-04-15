@@ -73,14 +73,62 @@ The behavior will be identical across sessions if these are saved."
   :group 'cart
   :lighter " cart"
   :keymap
-  (list (cons (cart--key "c") #'cart-calibrate)
+  (list (cons (cart--key "C") #'cart-calibrate)
         (cons (cart--key "p") #'cart-insert-point)
         (cons (cart--key "n") #'cart-tikz-node)
         (cons (cart--key "d") #'cart-tikz-draw)
+        (cons (cart--key "e") #'cart-tikz-circle)
         (cons (cart--key "c") #'cart-tikz-coordinates)
         (cons (cart--key "t") #'cart-translate-tikz)
         (cons (cart--key "r") #'cart-rotate-tikz)
         (cons (cart--key "s") #'cart-scale-tikz)))
+
+(defun cart--xy2x0sl (x y)
+  "Convert list of x and y points to x0 (intercept) and sl (slope).
+
+The two parameters, X & Y, are lists of two numbers storing the x and
+y values of two points respectively."
+  (let* ((x1 (elt x 0))
+         (x2 (elt x 1))
+         (y1 (elt y 0))
+         (y2 (elt y 1))
+         (x0 (/ (- (* x1 y2) (* x2 y1)) (- x1 x2)))
+         (sl (/ (- y1 y2) (- x1 x2))))
+    (list x0 sl)))
+
+(defun cart--XY2xy (XY)
+    "Transform point from pixels to calibrated coordinate system.
+
+  Input parameter XY is a list of two values storing the coordinates."
+    (list
+     (/ (- (elt XY 0) (elt (alist-get 'X cart--XY_0sl) 0)) (elt (alist-get 'X cart--XY_0sl) 1))
+     (/ (- (elt XY 1) (elt (alist-get 'Y cart--XY_0sl) 0)) (elt (alist-get 'Y cart--XY_0sl) 1))))
+
+(defun cart--vecop (op vec1 vec2)
+  "Conduct elementwise operation on vectors.
+
+Input parameter OP is a symbol denoting the binary operation.
+VEC1 and VEC2 are the two vectors (2-lists of coordinates)."
+  (list (funcall op (elt vec1 0) (elt vec2 0))
+        (funcall op (elt vec1 1) (elt vec2 1))))
+
+(defun cart--angle (vec1 vec2)
+  "Return the angle between the two vectors in radians.
+Vectors given as lists; Angle domain is [0,2pi).
+
+Input parameters VEC1 and VEC2 are two-number-lists storing the x and
+y components of the vectors."
+  (let ((Cth (apply '+ (cart--vecop '* vec1 vec2)))
+        (Sth (apply '- (cart--vecop '* vec1 (reverse vec2)))))
+    (atan Sth Cth)))
+
+(defun cart--norm (vec)
+  "Return the 2-norm of vector.
+Vector given as a list.
+
+Input parameter VEC is a two-number-list storing the x and y components
+of the vector."
+  (sqrt (apply '+ (mapcar (lambda (x) (expt x 2)) vec))))
 
 (defun cart--car-or (ARG)
   "Return car of ARG if ARG is a cons, ARG otherwise."
@@ -117,19 +165,6 @@ optional parameter."
         (y (float (read-number (format "(%s): Enter Y coordinate: " (or prompt "")) 0))))
     (list x y)))
 
-(defun cart--xy2x0sl (x y)
-  "Convert list of x and y points to x0 (intercept) and sl (slope).
-
-The two parameters, X & Y, are lists of two numbers storing the x and
-y values of two points respectively."
-  (let* ((x1 (elt x 0))
-         (x2 (elt x 1))
-         (y1 (elt y 0))
-         (y2 (elt y 1))
-         (x0 (/ (- (* x1 y2) (* x2 y1)) (- x1 x2)))
-         (sl (/ (- y1 y2) (- x1 x2))))
-    (list x0 sl)))
-
 (defun cart-calibrate ()
   "Conduct interactive calibration to set the `cart--XY_0sl' variable."
   (interactive)
@@ -147,13 +182,27 @@ y values of two points respectively."
     (setf (alist-get 'Y cart--XY_0sl) Y_0sl)
     (list XY1 XY2 xy1 xy2)))
 
-(defun cart--XY2xy (XY)
-  "Transform point from pixels to calibrated coordinate system.
+(defun cart--gmp (&optional prompt)
+  "Prompt to click on frame and return the xy coordinates in drawing CS.
+Identical to `cart--gmc' except for the fact that this subsequently transforms
+the point(s) through a call to `cart--XY2xy'.
+Two behaviors are possible: (if clicked) single point returned as a
+list with the two coordinates; (if dragged) start and end points of
+dragged region returned as a list of two point-lists (as above).
 
-Input parameter XY is a list of two values storing the coordinates."
-  (list
-   (/ (- (elt XY 0) (elt (alist-get 'X cart--XY_0sl) 0)) (elt (alist-get 'X cart--XY_0sl) 1))
-   (/ (- (elt XY 1) (elt (alist-get 'Y cart--XY_0sl) 0)) (elt (alist-get 'Y cart--XY_0sl) 1))))
+The optional parameter PROMPT allows one to specify a user-facing
+prompt.  The prompt defaults to 'Click anywhere' if not provided."
+  (let ((XYs (cart--gmc prompt)))
+    (if (listp (elt XYs 0))
+        (mapcar 'cart--XY2xy XYs)
+      (cart--XY2xy XYs))))
+
+(defun cart--fmt-point (xy)
+  "Insert point as \"(<`cart--nfmt'>, <`cart--nfmt'>)\".
+
+The parameter XY is a 2-list storing the coordinates of the point."
+  (format (concat "(" cart--nfmt ", " cart--nfmt ")")
+          (elt xy 0) (elt xy 1)))
 
 (defun cart-insert-point (&optional prompt)
   "Query for and insert clicked coordinates \"(x, y)\" at the current point.
@@ -193,20 +242,45 @@ Optional input parameters DOPTS and NOPTS are strings of draw and node
 options respectively. The user receives prompts for populating these."
   (interactive "sDraw options: \nsNode options: ")
   (insert (format "\\draw%s " (cart--optbr dopts)))
-  (while (cart-insert-point "Click on a point (RET to stop insertion)")
-    (insert (format "%s -- " nopts)))
-  (if (y-or-n-p "Insert first point in the end (manual closed path)?")
-      (progn
-        (cart--goto-begend)
-        (search-forward "(")
-        (while (cart--last-open-paren (1- (point)))
-          (search-forward "("))
-        (let ((pt1 (buffer-substring (point) (save-excursion (search-forward ")")))))
-          (move-end-of-line nil)
-          (insert (format "%s" pt1))))
-    (delete-char -4))
-  (insert ";")
-  (do-auto-fill))
+  (let ((ctflag nil))
+    (while (setq xys
+                 (cart--gmp
+                  "Click on a point/Click+Drag to include tangent (RET to stop insertion)"))
+      (if ctflag
+          (progn
+            (if (numberp (elt xys 0))
+                (progn
+                  (insert (concat " .. " (cart--fmt-point xys) nopts))
+                  (setq ctflag nil))
+              (insert (concat " and " (cart--fmt-point (elt xys 0))
+                              " .. " (cart--fmt-point (elt xys 1))
+                              nopts
+                              " .. controls "
+                              (cart--fmt-point
+                               (cart--vecop '- (elt xys 1)
+                                            (cart--vecop '- (elt xys 0) (elt xys 1)))) ))))
+        (if (numberp (elt xys 0))
+            (insert (concat (cart--fmt-point xys) nopts))
+          (insert (concat (cart--fmt-point (elt xys 0))
+                          nopts
+                          " .. controls " (cart--fmt-point (elt xys 1))))
+          (setq ctflag t)) )
+      (unless ctflag (insert " -- ")))
+    (when ctflag (insert " .. "))
+    (if (y-or-n-p "Insert first point in the end (manual closed path)?")
+        (progn
+          (cart--goto-begend)
+          (search-forward "(")
+          (while (cart--last-open-paren (1- (point)))
+            (search-forward "("))
+          (let ((pt1 (buffer-substring (point) (save-excursion (search-forward ")")))))
+            (move-end-of-line nil)
+            (insert (format "%s" pt1))))
+      (if ctflag
+          (delete-char (- (point) (search-backward " .. controls")))
+        (delete-char (- (point) (search-backward " --")))))
+    (insert ";")
+    (do-auto-fill)))
 
 (defun cart-tikz-node (&optional nopts nval)
   "Initiate a tikz \\node and insert value given by user.
@@ -247,6 +321,31 @@ Optional input parameter DOPTS is a string of draw options.  The user
   (delete-char -1)
   (insert "};")
   (do-auto-fill))
+
+(defun cart-tikz-circle (&optional dopts nopts)
+  "Initiate a tikz \\draw and insert a circle by choosing center & radii.
+Start with prompting the user for draw options and node options
+added after center point.  Format for the insertion is:
+        \\draw[DOPTS] (x1, y1) NOPTS circle
+                [x radius=<calc_val_x>, y radius=<calc_val_y>];
+Note that the \"node options\" NOPTS is not bounded by square
+braces. The user will have to type them in explicitly if needed.
+
+
+Optional input parameters DOPTS and NOPTS are strings of draw and node
+options respectively. The user receives prompts for populating these."
+  (interactive "sDraw options: \nsNode options: ")
+  (insert (format "\\draw%s " (cart--optbr dopts)))
+  (let ((xys1 (cart--gmp "Click and drag points along circumference")))
+    (when (numberp (elt xys1 0))  ;; only one point chosen
+      (setq xys1 (list xys1 (cart--gmp "Click the second point on circumference"))))
+
+    (insert
+     (concat (cart--fmt-point
+              (mapcar (lambda (x) (/ x 2)) (cart--vecop '+ (elt xys1 0) (elt xys1 1))))
+             (or nopts "") " "
+             (format (concat "circle[radius=" cart--nfmt "];")
+                     (/ (cart--norm (cart--vecop '- (elt xys1 0) (elt xys1 1))) 2))))))
 
 (defun cart--last-open-paren (&optional pos)
   "Return the last open paren that the current point lies in.
@@ -289,24 +388,6 @@ If non-nil, point is moved to end."
       (while (cart--last-open-paren (search-forward ";" nil t)))
     (while (cart--last-open-paren (search-backward "\\" nil t))))
   (point))
-
-(defun cart--angle (vec1 vec2)
-  "Return the angle between the two vectors in radians.
-Vectors given as lists; Angle domain is [0,2pi).
-
-Input parameters VEC1 and VEC2 are two-number-lists storing the x and
-y components of the vectors."
-  (let ((Cth (+ (* (elt vec1 0) (elt vec2 0)) (* (elt vec1 1) (elt vec2 1))))
-        (Sth (- (* (elt vec1 0) (elt vec2 1)) (* (elt vec2 0) (elt vec1 1)))))
-    (atan Sth Cth)))
-
-(defun cart--norm (vec)
-  "Return the 2-norm of vector.
-Vector given as a list.
-
-Input parameter VEC is a two-number-list storing the x and y components
-of the vector."
-  (sqrt (apply '+ (mapcar (lambda (x) (expt x 2)) vec))))
 
 (defun cart--translate (&optional dx dy)
   "Conduct rigid body translation on current context.
