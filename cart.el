@@ -81,7 +81,8 @@ The behavior will be identical across sessions if these are saved."
         (cons (cart--key "c") #'cart-tikz-coordinates)
         (cons (cart--key "t") #'cart-translate-tikz)
         (cons (cart--key "r") #'cart-rotate-tikz)
-        (cons (cart--key "s") #'cart-scale-tikz)))
+        (cons (cart--key "s") #'cart-scale-tikz)
+        (cons (cart--key "m") #'cart-tikz-move-point)))
 
 (defun cart--xy2x0sl (x y)
   "Convert list of x and y points to x0 (intercept) and sl (slope).
@@ -108,9 +109,14 @@ y values of two points respectively."
   "Conduct elementwise operation on vectors.
 
 Input parameter OP is a symbol denoting the binary operation.
-VEC1 and VEC2 are the two vectors (2-lists of coordinates)."
-  (list (funcall op (elt vec1 0) (elt vec2 0))
-        (funcall op (elt vec1 1) (elt vec2 1))))
+VEC1 and VEC2 are the two vectors (2-lists of coordinates).
+It is also possible to pass in a scalar to vec2, in which case
+it is interpreted as (list vec2 vec2)."
+  (if (numberp vec2)
+    (list (funcall op (elt vec1 0) vec2)
+          (funcall op (elt vec1 1) vec2))
+    (list (funcall op (elt vec1 0) (elt vec2 0))
+          (funcall op (elt vec1 1) (elt vec2 1)))))
 
 (defun cart--angle (vec1 vec2)
   "Return the angle between the two vectors in radians.
@@ -210,13 +216,8 @@ The parameter XY is a 2-list storing the coordinates of the point."
 Optional input parameter PROMPT allows setting the user-facing
 prompt.   Defaults to \"Click on Point\"."
   (interactive)
-  (let ((XY (cart--gmc prompt)))
-    (if XY (let ((xy (cart--XY2xy XY)))
-             (insert
-              (format
-               (concat "(" cart--nfmt ", " cart--nfmt ")")
-               (elt xy 0) (elt xy 1)))
-             xy))))
+  (let ((xy (cart--gmp prompt)))
+    (when xy (insert (cart--fmt-point xy)) t)))
 
 (defun cart--optbr (&optional opts)
   "Insert options bounded by square braces if provided.
@@ -389,31 +390,39 @@ If non-nil, point is moved to end."
     (while (cart--last-open-paren (search-backward "\\" nil t))))
   (point))
 
-(defun cart--translate (&optional dx dy)
+(defun cart--read-cds (&optional pos)
+  "Return the coordinates from the current point.
+Assumes that POS (or `(point)') is at the first character after a \"(\"
+and reads starting there until the next \")\".
+
+Optional parameter POS stores a starting point that defaults to `(point)'."
+  (save-excursion
+    (goto-char (or pos (point)))
+    (let ((p0 (point))
+          (p1 (search-forward ")")))
+      (mapcar 'string-to-number
+              (split-string
+               (replace-regexp-in-string
+                "\n" "" (buffer-substring p0 p1))
+               ",")))))
+
+(defun cart--translate (&optional dxdy)
   "Conduct rigid body translation on current context.
 The context is generated through narrow.  It is important for context
 to start from the first object's \"\\\" character and end at the
 last object's \";\" character.
 
-Optional input parameters DX, DY are x (horizontal) and y (vertical)
+Optional input parameter DXDY are x (horizontal) and y (vertical)
 translation values."
   (goto-char (point-min))
   (let ((p0) (p1) (cds))
     (while (setq p0 (search-forward "(" (point-max) t))
       (if (cart--tfm-skip (1- p0))
           (goto-char (1+ (point)))
-        (setq p1 (1- (search-forward ")")))
-        (setq cds
-              (mapcar 'string-to-number
-                      (split-string
-                       (replace-regexp-in-string
-                        "\n" "" (buffer-substring p0 p1))
-                       ",")))
-        (delete-region p0 p1)
-        (goto-char p0)
-        (setf (elt cds 0) (+ (elt cds 0) (or dx 0)))
-        (setf (elt cds 1) (+ (elt cds 1) (or dy 0)))
-        (insert (format (concat cart--nfmt ", " cart--nfmt) (elt cds 0) (elt cds 1)))))))
+        (setq p1 (search-forward ")"))
+        (setq cds (cart--read-cds p0))
+        (delete-region (1- p0) p1)
+        (insert (cart--fmt-point (cart--vecop '+ cds dxdy)))))))
 
 (defun cart--rotate (&optional tht cpt rnds)
   "Conduct rigid body rotation on current context.
@@ -430,23 +439,16 @@ RNDS is a boolean governing whether node contents should be rotated or not."
     (while (setq p0 (search-forward "(" (point-max) t))
       (if (cart--tfm-skip (1- p0))
           (goto-char (1+ (point)))
-        (setq p1 (1- (search-forward ")")))
-        (setq cds
-              (mapcar 'string-to-number
-                      (split-string
-                       (replace-regexp-in-string
-                        "\n" "" (buffer-substring p0 p1))
-                       ",")))
-        (delete-region p0 p1)
-        (goto-char p0)
+        (setq p1 (search-forward ")"))
+        (setq cds (cart--read-cds p0))
+        (delete-region (1- p0) p1)
         ;; Relative coordinates & Rotation
-        (let* ((cdsrel (list (- (elt cds 0) (or (elt cpt 0) 0))
-                             (- (elt cds 1) (or (elt cpt 1) 0))))
+        (let* ((cdsrel (cart--vecop '- cds (or cpt '(0 0))))
                (Cth (cos (or tht 0)))
                (Sth (sin (or tht 0)))
                (Tcds (list (+ (- (* Cth (elt cdsrel 0)) (* Sth (elt cdsrel 1))) (or (elt cpt 0) 0))
                            (+ (+ (* Sth (elt cdsrel 0)) (* Cth (elt cdsrel 1))) (or (elt cpt 1) 0)))))
-          (insert (format (concat cart--nfmt ", " cart--nfmt) (elt Tcds 0) (elt Tcds 1)))))))
+          (insert (cart--fmt-point Tcds))))))
   ;; Rotate nodes too, if needed
   (when rnds
     (goto-char (point-min))
@@ -483,20 +485,13 @@ SNDS is a boolean governing whether node contents should be scaled or not."
     (while (setq p0 (search-forward "(" (point-max) t))
       (if (cart--tfm-skip (1- p0))
           (goto-char (1+ (point)))
-        (setq p1 (1- (search-forward ")")))
-        (setq cds
-              (mapcar 'string-to-number
-                      (split-string
-                       (replace-regexp-in-string
-                        "\n" "" (buffer-substring p0 p1))
-                       ",")))
-        (delete-region p0 p1)
-        (goto-char p0)
+        (setq p1 (search-forward ")"))
+        (setq cds (cart--read-cds p0))
+        (delete-region (1- p0) p1)
         ;; Relative coordinates & Rotation
-        (let* ((cdsrel (list (- (elt cds 0) (or (elt cpt 0) 0))
-                             (- (elt cds 1) (or (elt cpt 1) 0))))
-               (Tcds (mapcar (lambda (i) (+ (* (elt cdsrel i) sc) (elt cpt i))) '(0 1))))
-          (insert (format (concat cart--nfmt ", " cart--nfmt) (elt Tcds 0) (elt Tcds 1)))))))
+        (let* ((cdsrel (cart--vecop '- cds (or cpt '(0 0))))
+               (Tcds (cart--vecop '+ (cart--vecop '* cdsrel sc) (or cpt '(0 0)))))
+          (insert (cart--fmt-point Tcds))))))
   ;; Scale nodes too, if needed
   (when snds
     (goto-char (point-min))
@@ -531,24 +526,17 @@ representing the desired translation. If the user does not drag and
 instead, just clicks, a prompt is launched asking the user to click on
 trget point."
   (interactive)
-  (let* ((XYs (cart--gmc "Click & drag from start point to end point"))
-         (XY0 (elt XYs 0))
-         (XY1 (elt XYs 1)))
-    (unless (listp XY0)
-      (setq XY0 XYs)
-      (setq XY1 (cart--gmc
-                 "You had only clicked on one point. Please click target point now")))
+  (let* ((xys (cart--gmp "Click & drag from start point to end point")))
+    (when (numberp (elt xys 0))
+      (setq xys (list xys (cart--gmp
+                 "You had only clicked on one point. Please click target point now"))))
 
-    (let* ((xy0 (cart--XY2xy XY0))
-           (xy1 (cart--XY2xy XY1))
-           (dx (- (elt xy1 0) (elt xy0 0)))
-           (dy (- (elt xy1 1) (elt xy0 1))))
-
+    (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
       (if (region-active-p)
           (narrow-to-region (region-beginning) (region-end))
         (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
 
-      (cart--translate dx dy)
+      (cart--translate dxdy)
       (goto-char (point-min))
       (while (not (eobp))
         (move-end-of-line nil)
@@ -582,24 +570,16 @@ a rotate field already exists, the existing value is replaced by its
 sum with THT.  If options are present for a node, and no rotate field
 exists, it is inserted."
   (interactive)
-  (let* ((XYref (cart--gmc "Click on the center of rotation (RET to use origin) "))
-         (XYs (cart--gmc "Click and drag the rotation target points "))
-         (rnds (y-or-n-p "Rotate Node contents too?"))
-         (XY0 (elt XYs 0))
-         (XY1 (elt XYs 1))
-         (xyref (if XYref (cart--XY2xy XYref) (list 0 0))))
-    (unless (listp XY0)
-      (setq XY0 XYs)
-      (setq XY1 (cart--gmc
-                 "You had only clicked on one point. Please click target point now")))
+  (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
+         (xys (cart--gmp "Click and drag the rotation target points "))
+         (rnds (y-or-n-p "Rotate Node contents too?")))
+    (when (numberp (elt xys 0))
+      (setq xys (list xys (cart--gmp
+                 "You had only clicked on one point. Please click target point now"))))
 
-    (let* ((xy0 (cart--XY2xy XY0))
-           (xy1 (cart--XY2xy XY1))
-           ;; Relative Coordinates
-           (xy0 (list (- (elt xy0 0) (elt xyref 0)) (- (elt xy0 1) (elt xyref 1))))
-           (xy1 (list (- (elt xy1 0) (elt xyref 0)) (- (elt xy1 1) (elt xyref 1))))
-           (theta (cart--angle xy0 xy1)))
+    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
 
+    (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
       (if (region-active-p)
           (narrow-to-region (region-beginning) (region-end))
         (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
@@ -637,24 +617,15 @@ a scale field already exists, the existing value is replaced by its
 product with SC.  If options are present for a node, and no scale field
 exists, it is inserted."
   (interactive)
-  (let* ((XYref (cart--gmc "Click on the center of scaling (RET to use origin) "))
-         (XYs (cart--gmc "Click and drag the scaling target points "))
-         (snds (y-or-n-p "Scale Node contents too?"))
-         (XY0 (elt XYs 0))
-         (XY1 (elt XYs 1))
-         (xyref (if XYref (cart--XY2xy XYref) (list 0 0))))
-    (unless (listp XY0)
-      (setq XY0 XYs)
-      (setq XY1 (cart--gmc
-                 "You had only clicked on one point. Please click target point now")))
+  (let* ((xyref (or (cart--gmp "Click on the center of scaling (RET to use origin) ") '(0 0)))
+         (xys (cart--gmp "Click and drag the scaling target points "))
+         (snds (y-or-n-p "Scale Node contents too?")))
+    (when (numberp (elt xys 0))
+      (setq xys (list xys (cart--gmp
+                           "You had only clicked on one point. Please click target point now"))))
+    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys)) ;; Relative Coordinates
 
-    (let* ((xy0 (cart--XY2xy XY0))
-           (xy1 (cart--XY2xy XY1))
-           ;; Relative Coordinates
-           (xy0 (list (- (elt xy0 0) (elt xyref 0)) (- (elt xy0 1) (elt xyref 1))))
-           (xy1 (list (- (elt xy1 0) (elt xyref 0)) (- (elt xy1 1) (elt xyref 1))))
-           (sc (/ (cart--norm xy1) (cart--norm xy0))))
-
+    (let ((sc (apply '/ (reverse (mapcar 'cart--norm xys)))))
       (if (region-active-p)
           (narrow-to-region (region-beginning) (region-end))
         (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
@@ -666,6 +637,33 @@ exists, it is inserted."
         (do-auto-fill)
         (forward-line))
       (do-auto-fill)
+      (widen))))
+
+(defun cart-tikz-move-point ()
+  "Move a selected point to a selected target location."
+  (interactive)
+  (save-excursion
+    (let ((xys (cart--gmp "Select point and drag to target"))
+          (pt (point))
+          (nrm 100)
+          (mval 100))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp "Only source point selected. Click the target point"))))
+
+      (LaTeX-narrow-to-environment)
+      (goto-char (point-min))
+      (while (search-forward "(" (point-max) t)
+        (unless (cart--tfm-skip (1- (point)))
+          (let ((cds (cart--read-cds)))
+            (setq nrm (cart--norm (cart--vecop '- (elt xys 0) cds)))
+            (setq pt (if (< nrm mval) (point) pt))
+            (setq mval (if (< nrm mval) nrm mval))
+            (search-forward ")"))))
+
+      (goto-char (1- pt))
+      (delete-region (1- pt) (search-forward ")"))
+      (insert (cart--fmt-point (elt xys 1)))
+
       (widen))))
 
 (provide 'cart)

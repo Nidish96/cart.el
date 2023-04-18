@@ -48,7 +48,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 
 4. *Insertion: Tikz Node*: Interactive tikz-nodes can be initiated by calling =cart-tikz-node= (default kbd: =C-x a n=). It will first prompt the user for "node options" (string options to be passed as =\node[options]=) and "node value" (string value to be passed as =\node[...] at (pt_x, pt_y) {value};=), before prompting the user to choose the point (only one point in this case).
 
-5. *Insertion: Tikz circle*: Interactive tikz-draw initiated and a circle is drawn through the two points the user clicks & drags (or clicks sequentially). The radius defaults to the mean point. 
+5. *Insertion: Tikz circle*: Interactive tikz-draw initiated by calling =cart-tikz-circle= (default kbd: =C-x a e=) and a circle is drawn through the two points the user clicks & drags (or clicks sequentially). The radius defaults to the mean point. 
 
 6. *Insertion: Tikz Draw Plot Coordinates*: Interactive tikz-draw plot coordinates can be initiated by calling =cart-tikz-coordinates= (default kbd: =C-x a c=). It will first prompt the user for "draw options" (string options to be passed as =\draw[options]=) before prompting the user to start clicking the desired points. The argument =[smooth]= will be passed to plot. The selection can be stopped by triggering any event other than =down-mouse-1=(left click), hitting =RET= for example.
 
@@ -58,6 +58,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 
 9. *Transformation: Scaling*: Start just like for translation. Now call =cart-scale-tikz= (default kbd: =C-x a s=) and select the reference point, and start-end points by dragging/clicking sequentially. A prompt will come asking if the node contents should also be rotated (handled through the Tikz =rotate= fields of the nodes). Scaling will be conducted so as to move the start point feature to the end point.
 
+10. *Transformation: Move single point*: Start with the point inside the =tikzpicture= environment corresponding to the figure you're looking at. Now call =cart-tikz-move-point= (default kbd: =C-x a m=). A prompt will ask you to choose a point and drag it to its target location.
 
 #+CAPTION: Default Keybindings
 | Keybinding       | Command               | Description                     |
