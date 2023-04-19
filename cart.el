@@ -42,6 +42,7 @@
 ;; interface.  See more in the README.org file.
 
 ;;; Code:
+(require 'latex)
 
 (defcustom cart--XY_0sl '((X . (0.0 1.0))
                         (Y . (0.0 1.0)))
@@ -210,15 +211,6 @@ The parameter XY is a 2-list storing the coordinates of the point."
   (format (concat "(" cart--nfmt ", " cart--nfmt ")")
           (elt xy 0) (elt xy 1)))
 
-(defun cart-insert-point (&optional prompt)
-  "Query for and insert clicked coordinates \"(x, y)\" at the current point.
-
-Optional input parameter PROMPT allows setting the user-facing
-prompt.   Defaults to \"Click on Point\"."
-  (interactive)
-  (let ((xy (cart--gmp prompt)))
-    (when xy (insert (cart--fmt-point xy)) t)))
-
 (defun cart--optbr (&optional opts)
   "Insert options bounded by square braces if provided.
 Otherwise do nothing.
@@ -227,6 +219,26 @@ Optional input parameter OPTS is either a string of options or nil."
   (if (not (string-empty-p opts))
       (format "[%s]" opts)
     opts))
+
+(defun cart--top-search (string &optional bound noerror count)
+  "Search forward for STRING, ensuring point is on top level.
+
+Input parameter STRING is the same as given to `search-forward'.
+Optional parameters BOUND, NOERROR, and COUNT are also identical to
+that in `search-forward'."
+  (let ((p0 (search-forward string bound noerror count)))
+    (while (save-excursion (cart--tfm-skip (1- p0)))
+      (setq p0 (search-forward string bound noerror count)))
+    p0))
+
+(defun cart-insert-point (&optional prompt)
+  "Query for and insert clicked coordinates \"(x, y)\" at the current point.
+
+Optional input parameter PROMPT allows setting the user-facing
+prompt.   Defaults to \"Click on Point\"."
+  (interactive)
+  (let ((xy (cart--gmp prompt)))
+    (when xy (insert (cart--fmt-point xy)) t)))
 
 (defun cart-tikz-draw (&optional dopts nopts)
   "Initiate a tikz \\draw and insert points sequentially.
@@ -424,6 +436,39 @@ translation values."
         (delete-region (1- p0) p1)
         (insert (cart--fmt-point (cart--vecop '+ cds dxdy)))))))
 
+(defun cart-translate-tikz ()
+  "Translate objects in current Tikz/Pgf statement/region.
+This works by first calling `narrow-to-region', followed by a call
+to `cart--translate'.  If a region is not chosen, the current
+statement (bound by \"\\\", \";\") is used for the narrow.  If a
+region is chosen, the region is used for the narrow.  It is important
+for the region to start from the first object's \"\\\" character and
+end at the last object's \";\" character.
+
+The user is queried to click & drag from the start point to end point
+representing the desired translation. If the user does not drag and
+instead, just clicks, a prompt is launched asking the user to click on
+trget point."
+  (interactive)
+  (let* ((xys (cart--gmp "Click & drag from start point to end point")))
+    (when (numberp (elt xys 0))
+      (setq xys (list xys (cart--gmp
+                           "You had only clicked on one point. Please click target point now"))))
+
+    (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
+      (if (region-active-p)
+          (narrow-to-region (region-beginning) (region-end))
+        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+      (cart--translate dxdy)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (move-end-of-line nil)
+        (do-auto-fill)
+        (forward-line))
+      (do-auto-fill)
+      (widen))))
+
 (defun cart--rotate (&optional tht cpt rnds)
   "Conduct rigid body rotation on current context.
 The context is generated through narrow.  It is important for context
@@ -470,6 +515,54 @@ RNDS is a boolean governing whether node contents should be rotated or not."
               (insert (format (concat ", rotate=" cart--nfmt)
                               (radians-to-degrees tht))))))))))
 
+(defun cart-rotate-tikz ()
+  "Rotate objects in current Tikz/Pgf statement/region.
+This works by first calling `narrow-to-region', followed by a call to
+`cart--rotate'.  If a region is not chosen, the current statement
+\(bound by \"\\\", \";\") is used for the narrow.  If a region is
+chosen, the region is used for the narrow.  It is important for the
+region to start from the first object's \"\\\" character and end at
+the last object's \";\" character.
+
+The user is prompted to click on the center of rotation, then to click
+and drag the rotation target points.  The angle of rotation is
+calculated as the angle between the vectors joining the center point
+with the end-points of the drag operation.  If the user fails to drag,
+another prompt is launched asking the user to click on the target
+point.
+
+After the coordinate values are modified, the user is prompted to say
+whether the node contents must be rotated too or not.  The \"rotate\"
+field of the nodes (which comes in Tikz/Pgf) is used for this.  If no
+options are present for a node, \"[rotate=THT]\" is inserted (where
+THT is the angle in degrees).  If options are present for a node, and
+a rotate field already exists, the existing value is replaced by its
+sum with THT.  If options are present for a node, and no rotate field
+exists, it is inserted."
+  (interactive)
+  (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
+         (xys (cart--gmp "Click and drag the rotation target points "))
+         (rnds (y-or-n-p "Rotate Node contents too?")))
+    (when (numberp (elt xys 0))
+      (setq xys (list xys (cart--gmp
+                           "You had only clicked on one point. Please click target point now"))))
+
+    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
+
+    (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
+      (if (region-active-p)
+          (narrow-to-region (region-beginning) (region-end))
+        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+      (cart--rotate theta xyref rnds)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (move-end-of-line nil)
+        (do-auto-fill)
+        (forward-line))
+      (do-auto-fill)
+      (widen))))
+
 (defun cart--scale (&optional sc cpt snds)
   "Conduct scaling in the current context.
 The context is generated through narrow.  It is important for context
@@ -510,88 +603,6 @@ SNDS is a boolean governing whether node contents should be scaled or not."
                   (goto-char ebr))
               (goto-char (1- ebr))
               (insert (format (concat ", scale=" cart--nfmt) sc)))))))))
-
-
-(defun cart-translate-tikz ()
-  "Translate objects in current Tikz/Pgf statement/region.
-This works by first calling `narrow-to-region', followed by a call
-to `cart--translate'.  If a region is not chosen, the current
-statement (bound by \"\\\", \";\") is used for the narrow.  If a
-region is chosen, the region is used for the narrow.  It is important
-for the region to start from the first object's \"\\\" character and
-end at the last object's \";\" character.
-
-The user is queried to click & drag from the start point to end point
-representing the desired translation. If the user does not drag and
-instead, just clicks, a prompt is launched asking the user to click on
-trget point."
-  (interactive)
-  (let* ((xys (cart--gmp "Click & drag from start point to end point")))
-    (when (numberp (elt xys 0))
-      (setq xys (list xys (cart--gmp
-                 "You had only clicked on one point. Please click target point now"))))
-
-    (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
-      (if (region-active-p)
-          (narrow-to-region (region-beginning) (region-end))
-        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
-
-      (cart--translate dxdy)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (move-end-of-line nil)
-        (do-auto-fill)
-        (forward-line))
-      (do-auto-fill)
-      (widen))))
-
-(defun cart-rotate-tikz ()
-  "Rotate objects in current Tikz/Pgf statement/region.
-This works by first calling `narrow-to-region', followed by a call to
-`cart--rotate'.  If a region is not chosen, the current statement
-\(bound by \"\\\", \";\") is used for the narrow.  If a region is
-chosen, the region is used for the narrow.  It is important for the
-region to start from the first object's \"\\\" character and end at
-the last object's \";\" character.
-
-The user is prompted to click on the center of rotation, then to click
-and drag the rotation target points.  The angle of rotation is
-calculated as the angle between the vectors joining the center point
-with the end-points of the drag operation.  If the user fails to drag,
-another prompt is launched asking the user to click on the target
-point.
-
-After the coordinate values are modified, the user is prompted to say
-whether the node contents must be rotated too or not.  The \"rotate\"
-field of the nodes (which comes in Tikz/Pgf) is used for this.  If no
-options are present for a node, \"[rotate=THT]\" is inserted (where
-THT is the angle in degrees).  If options are present for a node, and
-a rotate field already exists, the existing value is replaced by its
-sum with THT.  If options are present for a node, and no rotate field
-exists, it is inserted."
-  (interactive)
-  (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
-         (xys (cart--gmp "Click and drag the rotation target points "))
-         (rnds (y-or-n-p "Rotate Node contents too?")))
-    (when (numberp (elt xys 0))
-      (setq xys (list xys (cart--gmp
-                 "You had only clicked on one point. Please click target point now"))))
-
-    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
-
-    (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
-      (if (region-active-p)
-          (narrow-to-region (region-beginning) (region-end))
-        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
-
-      (cart--rotate theta xyref rnds)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (move-end-of-line nil)
-        (do-auto-fill)
-        (forward-line))
-      (do-auto-fill)
-      (widen))))
 
 (defun cart-scale-tikz ()
   "Scale objects in current Tikz/Pgf statement/region.
@@ -663,6 +674,30 @@ exists, it is inserted."
       (goto-char (1- pt))
       (delete-region (1- pt) (search-forward ")"))
       (insert (cart--fmt-point (elt xys 1)))
+
+      (widen))))
+
+(defun cart-tikz-delete-point ()
+  "Delete a selected point."
+  (interactive)
+  (save-excursion
+    (let ((xy (cart--gmp "Select point to delete"))
+          (pt (point))
+          (nrm 100)
+          (mval 100))
+
+      (LaTeX-narrow-to-environment)
+      (goto-char (point-min))
+      (while (search-forward "(" (point-max) t)
+        (unless (cart--tfm-skip (1- (point)))
+          (let ((cds (cart--read-cds)))
+            (setq nrm (cart--norm (cart--vecop '- xy cds)))
+            (setq pt (if (< nrm mval) (point) pt))
+            (setq mval (if (< nrm mval) nrm mval))
+            (search-forward ")"))))
+
+      (goto-char (1+ pt))
+      (delete-region (point) (cart--top-search "("))
 
       (widen))))
 

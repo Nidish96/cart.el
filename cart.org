@@ -49,7 +49,7 @@
   ;; interface.  See more in the README.org file.
 
   ;;; Code:
-
+  (require 'latex)
 #+end_src
 ** Define Minor-Mode and Global Variables
 #+begin_src emacs-lisp :tangle yes :results none
@@ -92,9 +92,9 @@
           (cons (cart--key "t") #'cart-translate-tikz)
           (cons (cart--key "r") #'cart-rotate-tikz)
           (cons (cart--key "s") #'cart-scale-tikz)
-          (cons (cart--key "m") #'cart-tikz-move-point)))
+          (cons (cart--key "m") #'cart-tikz-move-point)
+          (cons (cart--key "k") #'cart-tikz-delete-point)))
 #+end_src
-
 ** Define Math utility functions
 #+begin_src emacs-lisp :tangle yes
   (defun cart--xy2x0sl (x y)
@@ -186,7 +186,6 @@
           (y (float (read-number (format "(%s): Enter Y coordinate: " (or prompt "")) 0))))
       (list x y)))
 #+end_src
-
 ** Wrapper functions for calibration
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart-calibrate ()
@@ -221,7 +220,6 @@
           (mapcar 'cart--XY2xy XYs)
         (cart--XY2xy XYs))))
 #+end_src
-
 ** Wrapper functions for inserting a point, tikz-draw, tikz-node, etc.
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart--fmt-point (xy)
@@ -230,15 +228,6 @@
   The parameter XY is a 2-list storing the coordinates of the point."
     (format (concat "(" cart--nfmt ", " cart--nfmt ")")
             (elt xy 0) (elt xy 1)))
-
-  (defun cart-insert-point (&optional prompt)
-    "Query for and insert clicked coordinates \"(x, y)\" at the current point.
-
-  Optional input parameter PROMPT allows setting the user-facing
-  prompt.   Defaults to \"Click on Point\"."
-    (interactive)
-    (let ((xy (cart--gmp prompt)))
-      (when xy (insert (cart--fmt-point xy)) t)))
 
   (defun cart--optbr (&optional opts)
     "Insert options bounded by square braces if provided.
@@ -249,6 +238,30 @@
         (format "[%s]" opts)
       opts))
 
+  (defun cart--top-search (string &optional bound noerror count)
+    "Search forward for STRING, ensuring point is on top level.
+
+  Input parameter STRING is the same as given to `search-forward'.
+  Optional parameters BOUND, NOERROR, and COUNT are also identical to
+  that in `search-forward'."
+    (let ((p0 (search-forward string bound noerror count)))
+      (while (save-excursion (cart--tfm-skip (1- p0)))
+        (setq p0 (search-forward string bound noerror count)))
+      p0))
+#+end_src
+*** Point Insertion
+#+begin_src emacs-lisp :tangle yes
+  (defun cart-insert-point (&optional prompt)
+    "Query for and insert clicked coordinates \"(x, y)\" at the current point.
+
+  Optional input parameter PROMPT allows setting the user-facing
+  prompt.   Defaults to \"Click on Point\"."
+    (interactive)
+    (let ((xy (cart--gmp prompt)))
+      (when xy (insert (cart--fmt-point xy)) t)))
+#+end_src
+*** Draw Insertion
+#+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-draw (&optional dopts nopts)
     "Initiate a tikz \\draw and insert points sequentially.
   Start with prompting the user for draw options and common node options
@@ -303,7 +316,9 @@
           (delete-char (- (point) (search-backward " --")))))
       (insert ";")
       (do-auto-fill)))
-
+#+end_src
+*** Node Insertion
+#+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-node (&optional nopts nval)
     "Initiate a tikz \\node and insert value given by user.
   Start with prompting the user for node options and node value.
@@ -318,7 +333,9 @@
     (cart-insert-point)
     (insert (format " \{%s\};" nval))
     (do-auto-fill))
-
+#+end_src
+*** Coordinates Insertion
+#+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-coordinates (&optional dopts)
     "Initiate a tikz \\draw plot [smooth] and insert points.
   Start with prompting the user for draw options.  Format for the
@@ -343,7 +360,9 @@
     (delete-char -1)
     (insert "};")
     (do-auto-fill))
-
+#+end_src
+*** Circle Insertion
+#+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-circle (&optional dopts nopts)
     "Initiate a tikz \\draw and insert a circle by choosing center & radii.
   Start with prompting the user for draw options and node options
@@ -369,7 +388,6 @@
                (format (concat "circle[radius=" cart--nfmt "];")
                        (/ (cart--norm (cart--vecop '- (elt xys1 0) (elt xys1 1))) 2))))))
 #+end_src
-
 ** Wrapper functions for modifying existing tikz commands (draw, node, coordinates)
 #+begin_src emacs-lisp :tangle yes :results none
   (defun cart--last-open-paren (&optional pos)
@@ -429,7 +447,9 @@
                  (replace-regexp-in-string
                   "\n" "" (buffer-substring p0 p1))
                  ",")))))
-
+#+end_src
+*** Translation
+#+begin_src emacs-lisp :tangle yes
   (defun cart--translate (&optional dxdy)
     "Conduct rigid body translation on current context.
   The context is generated through narrow.  It is important for context
@@ -448,6 +468,41 @@
           (delete-region (1- p0) p1)
           (insert (cart--fmt-point (cart--vecop '+ cds dxdy)))))))
 
+  (defun cart-translate-tikz ()
+    "Translate objects in current Tikz/Pgf statement/region.
+  This works by first calling `narrow-to-region', followed by a call
+  to `cart--translate'.  If a region is not chosen, the current
+  statement (bound by \"\\\", \";\") is used for the narrow.  If a
+  region is chosen, the region is used for the narrow.  It is important
+  for the region to start from the first object's \"\\\" character and
+  end at the last object's \";\" character.
+
+  The user is queried to click & drag from the start point to end point
+  representing the desired translation. If the user does not drag and
+  instead, just clicks, a prompt is launched asking the user to click on
+  trget point."
+    (interactive)
+    (let* ((xys (cart--gmp "Click & drag from start point to end point")))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp
+                             "You had only clicked on one point. Please click target point now"))))
+
+      (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
+        (if (region-active-p)
+            (narrow-to-region (region-beginning) (region-end))
+          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+        (cart--translate dxdy)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (move-end-of-line nil)
+          (do-auto-fill)
+          (forward-line))
+        (do-auto-fill)
+        (widen))))
+#+end_src
+*** Rotation
+#+begin_src emacs-lisp :tangle yes
   (defun cart--rotate (&optional tht cpt rnds)
     "Conduct rigid body rotation on current context.
   The context is generated through narrow.  It is important for context
@@ -494,6 +549,56 @@
                 (insert (format (concat ", rotate=" cart--nfmt)
                                 (radians-to-degrees tht))))))))))
 
+  (defun cart-rotate-tikz ()
+    "Rotate objects in current Tikz/Pgf statement/region.
+  This works by first calling `narrow-to-region', followed by a call to
+  `cart--rotate'.  If a region is not chosen, the current statement
+  \(bound by \"\\\", \";\") is used for the narrow.  If a region is
+  chosen, the region is used for the narrow.  It is important for the
+  region to start from the first object's \"\\\" character and end at
+  the last object's \";\" character.
+
+  The user is prompted to click on the center of rotation, then to click
+  and drag the rotation target points.  The angle of rotation is
+  calculated as the angle between the vectors joining the center point
+  with the end-points of the drag operation.  If the user fails to drag,
+  another prompt is launched asking the user to click on the target
+  point.
+
+  After the coordinate values are modified, the user is prompted to say
+  whether the node contents must be rotated too or not.  The \"rotate\"
+  field of the nodes (which comes in Tikz/Pgf) is used for this.  If no
+  options are present for a node, \"[rotate=THT]\" is inserted (where
+  THT is the angle in degrees).  If options are present for a node, and
+  a rotate field already exists, the existing value is replaced by its
+  sum with THT.  If options are present for a node, and no rotate field
+  exists, it is inserted."
+    (interactive)
+    (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
+           (xys (cart--gmp "Click and drag the rotation target points "))
+           (rnds (y-or-n-p "Rotate Node contents too?")))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp
+                             "You had only clicked on one point. Please click target point now"))))
+
+      (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
+
+      (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
+        (if (region-active-p)
+            (narrow-to-region (region-beginning) (region-end))
+          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+
+        (cart--rotate theta xyref rnds)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (move-end-of-line nil)
+          (do-auto-fill)
+          (forward-line))
+        (do-auto-fill)
+        (widen))))
+#+end_src
+*** Scaling
+#+begin_src emacs-lisp :tangle yes
   (defun cart--scale (&optional sc cpt snds)
     "Conduct scaling in the current context.
   The context is generated through narrow.  It is important for context
@@ -534,88 +639,6 @@
                     (goto-char ebr))
                 (goto-char (1- ebr))
                 (insert (format (concat ", scale=" cart--nfmt) sc)))))))))
-
-
-  (defun cart-translate-tikz ()
-    "Translate objects in current Tikz/Pgf statement/region.
-  This works by first calling `narrow-to-region', followed by a call
-  to `cart--translate'.  If a region is not chosen, the current
-  statement (bound by \"\\\", \";\") is used for the narrow.  If a
-  region is chosen, the region is used for the narrow.  It is important
-  for the region to start from the first object's \"\\\" character and
-  end at the last object's \";\" character.
-
-  The user is queried to click & drag from the start point to end point
-  representing the desired translation. If the user does not drag and
-  instead, just clicks, a prompt is launched asking the user to click on
-  trget point."
-    (interactive)
-    (let* ((xys (cart--gmp "Click & drag from start point to end point")))
-      (when (numberp (elt xys 0))
-        (setq xys (list xys (cart--gmp
-                   "You had only clicked on one point. Please click target point now"))))
-
-      (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
-        (if (region-active-p)
-            (narrow-to-region (region-beginning) (region-end))
-          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
-
-        (cart--translate dxdy)
-        (goto-char (point-min))
-        (while (not (eobp))
-          (move-end-of-line nil)
-          (do-auto-fill)
-          (forward-line))
-        (do-auto-fill)
-        (widen))))
-
-  (defun cart-rotate-tikz ()
-    "Rotate objects in current Tikz/Pgf statement/region.
-  This works by first calling `narrow-to-region', followed by a call to
-  `cart--rotate'.  If a region is not chosen, the current statement
-  \(bound by \"\\\", \";\") is used for the narrow.  If a region is
-  chosen, the region is used for the narrow.  It is important for the
-  region to start from the first object's \"\\\" character and end at
-  the last object's \";\" character.
-
-  The user is prompted to click on the center of rotation, then to click
-  and drag the rotation target points.  The angle of rotation is
-  calculated as the angle between the vectors joining the center point
-  with the end-points of the drag operation.  If the user fails to drag,
-  another prompt is launched asking the user to click on the target
-  point.
-
-  After the coordinate values are modified, the user is prompted to say
-  whether the node contents must be rotated too or not.  The \"rotate\"
-  field of the nodes (which comes in Tikz/Pgf) is used for this.  If no
-  options are present for a node, \"[rotate=THT]\" is inserted (where
-  THT is the angle in degrees).  If options are present for a node, and
-  a rotate field already exists, the existing value is replaced by its
-  sum with THT.  If options are present for a node, and no rotate field
-  exists, it is inserted."
-    (interactive)
-    (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
-           (xys (cart--gmp "Click and drag the rotation target points "))
-           (rnds (y-or-n-p "Rotate Node contents too?")))
-      (when (numberp (elt xys 0))
-        (setq xys (list xys (cart--gmp
-                   "You had only clicked on one point. Please click target point now"))))
-
-      (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
-
-      (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
-        (if (region-active-p)
-            (narrow-to-region (region-beginning) (region-end))
-          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
-
-        (cart--rotate theta xyref rnds)
-        (goto-char (point-min))
-        (while (not (eobp))
-          (move-end-of-line nil)
-          (do-auto-fill)
-          (forward-line))
-        (do-auto-fill)
-        (widen))))
 
   (defun cart-scale-tikz ()
     "Scale objects in current Tikz/Pgf statement/region.
@@ -663,7 +686,6 @@
         (do-auto-fill)
         (widen))))
 #+end_src
-
 ** Wrapper functions for moving a selected point in a diagram
 #+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-move-point ()
@@ -690,6 +712,30 @@
         (goto-char (1- pt))
         (delete-region (1- pt) (search-forward ")"))
         (insert (cart--fmt-point (elt xys 1)))
+
+        (widen))))
+
+  (defun cart-tikz-delete-point ()
+    "Delete a selected point."
+    (interactive)
+    (save-excursion
+      (let ((xy (cart--gmp "Select point to delete"))
+            (pt (point))
+            (nrm 100)
+            (mval 100))
+
+        (LaTeX-narrow-to-environment)
+        (goto-char (point-min))
+        (while (search-forward "(" (point-max) t)
+          (unless (cart--tfm-skip (1- (point)))
+            (let ((cds (cart--read-cds)))
+              (setq nrm (cart--norm (cart--vecop '- xy cds)))
+              (setq pt (if (< nrm mval) (point) pt))
+              (setq mval (if (< nrm mval) nrm mval))
+              (search-forward ")"))))
+
+        (goto-char (1+ pt))
+        (delete-region (point) (cart--top-search "("))
 
         (widen))))
 #+end_src

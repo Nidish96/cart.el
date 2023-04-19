@@ -60,25 +60,29 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 
 10. *Transformation: Move single point*: Start with the point inside the =tikzpicture= environment corresponding to the figure you're looking at. Now call =cart-tikz-move-point= (default kbd: =C-x a m=). A prompt will ask you to choose a point and drag it to its target location.
 
+11. *Transformation: Delete single point*: Start similar to moving and call =cart-tikz-delete-point= (default kbd: =C-x a k=). Select the desired point to delete it.
+
 #+CAPTION: Default Keybindings
-| Keybinding       | Command               | Description                     |
-|------------------+-----------------------+---------------------------------|
-| C-x a            | cart-keymap-prefix    | Not callable.                   |
-| C-x a C          | cart-calibrate        | Initiate Calibration.           |
-|------------------+-----------------------+---------------------------------|
-| *Insertion*      |                       |                                 |
-|------------------+-----------------------+---------------------------------|
-| C-x a p          | cart-insert-point     | Insert single point.            |
-| C-x a n          | cart-tikz-node        | Insert Tikz node.               |
-| C-x a d          | cart-tikz-draw        | Insert Tikz draw.               |
-| C-x a e          | cart-tikz-circle      | Insert Tikz circle (with draw). |
-| C-x a c          | cart-tikz-coordinates | Insert Tikz coordinates.        |
-|------------------+-----------------------+---------------------------------|
-| *Transformation* |                       |                                 |
-|------------------+-----------------------+---------------------------------|
-| C-x a t          | cart-translate-tikz   | Translate region/statement.     |
-| C-x a r          | cart-rotate-tikz      | Rotate region/statement.        |
-| C-x a s          | cart-scale-tikz       | Scale region/statement.         |
+| Keybinding       | Command                  | Description                     |
+|------------------+--------------------------+---------------------------------|
+| =C-x a=          | =cart-keymap-prefix=     | Prefix. Not callable.           |
+| =C-x a C=        | =cart-calibrate=         | Initiate Calibration.           |
+|------------------+--------------------------+---------------------------------|
+| *Insertion*      |                          |                                 |
+|------------------+--------------------------+---------------------------------|
+| =C-x a p=        | =cart-insert-point=      | Insert single point.            |
+| =C-x a n=        | =cart-tikz-node=         | Insert Tikz node.               |
+| =C-x a d=        | =cart-tikz-draw=         | Insert Tikz draw.               |
+| =C-x a e=        | =cart-tikz-circle=       | Insert Tikz circle (with draw). |
+| =C-x a c=        | =cart-tikz-coordinates=  | Insert Tikz coordinates.        |
+|------------------+--------------------------+---------------------------------|
+| *Transformation* |                          |                                 |
+|------------------+--------------------------+---------------------------------|
+| =C-x a t=        | =cart-translate-tikz=    | Translate region/statement.     |
+| =C-x a r=        | =cart-rotate-tikz=       | Rotate region/statement.        |
+| =C-x a s=        | =cart-scale-tikz=        | Scale region/statement.         |
+| =C-x a m=        | =cart-tikz-move-point=   | Move selected point.            |
+| =C-x a k=        | =cart-tikz-delete-point= | Delete selected point.          |
 ** Examples
 #+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
@@ -90,7 +94,6 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 #+ATTR_LATEX: :width 400px
 #+ATTR_ORG: :width 100px
 [[./figs/fig4.png]]
-
 ** Personal Tips for Beamer
 Since it is often the case in presentations to want graphical objects "pop-up" independent of the remaining content on the slide, I use the following preamble in each of my tex files:
 #+begin_src latex
@@ -117,8 +120,6 @@ I often have my tikzpicture environment setup in the following fashion so that i
 
   \end{tikzpicture}
 #+end_src
-
-
 * Possible Improvements
 1. Integration of Tikz/Pgf variables.
 2. Making node information for each point in draw possible as an option (instead of having to click on successive points repeatedly and have common node properties).
@@ -158,3 +159,5 @@ time, and the code does not really “show” how things will look like.
 
 -- Tikz/PGF Manual
 #+end_quote
+
+
