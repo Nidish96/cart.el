@@ -384,12 +384,13 @@ coordinate set (as in `cart-tikz-smooth').
 Optional input parameter POS allows user to specify point (defaults to
   \"(point)\")."
   (let ((lopa (cart--last-open-paren (or pos (point)))))
-    (when (char-equal (or lopa ?\0) ?\{)
-      (not (string-equal (save-excursion
-                           (search-backward "{")
-                           (left-word)
-                           (word-at-point))
-                         "coordinates")))))
+    (if (char-equal (or lopa ?\0) ?\{)
+        (not (string-equal (save-excursion
+                             (search-backward "{")
+                             (left-word)
+                             (word-at-point))
+                           "coordinates"))
+      lopa)))
 
 (defun cart--goto-begend (&optional enflg)
   "Move pointer to either the beginning or end of current statement.
