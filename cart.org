@@ -11,7 +11,7 @@
 
   ;; Author: Nidish Narayanaa Balaji <nidbid@gmail.com>
   ;; Keywords: tex, mouse
-  ;; Version: 0.0.1
+  ;; Version: 0.1
   ;; Package-Requires: ((emacs "25.1"))
   ;; URL: https://github.com/Nidish96/cart.el
 
@@ -686,7 +686,8 @@
         (do-auto-fill)
         (widen))))
 #+end_src
-** Wrapper functions for moving a selected point in a diagram
+** Wrapper functions for editing a selected point in a diagram
+*** Move point
 #+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-move-point ()
     "Move a selected point to a selected target location."
@@ -714,7 +715,9 @@
         (insert (cart--fmt-point (elt xys 1)))
 
         (widen))))
-
+  #+end_src
+*** Delete point
+  #+begin_src emacs-lisp :tangle yes
   (defun cart-tikz-delete-point ()
     "Delete a selected point."
     (interactive)

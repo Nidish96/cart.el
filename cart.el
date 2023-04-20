@@ -4,7 +4,7 @@
 
 ;; Author: Nidish Narayanaa Balaji <nidbid@gmail.com>
 ;; Keywords: tex, mouse
-;; Version: 0.0.1
+;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; URL: https://github.com/Nidish96/cart.el
 
@@ -83,7 +83,8 @@ The behavior will be identical across sessions if these are saved."
         (cons (cart--key "t") #'cart-translate-tikz)
         (cons (cart--key "r") #'cart-rotate-tikz)
         (cons (cart--key "s") #'cart-scale-tikz)
-        (cons (cart--key "m") #'cart-tikz-move-point)))
+        (cons (cart--key "m") #'cart-tikz-move-point)
+        (cons (cart--key "k") #'cart-tikz-delete-point)))
 
 (defun cart--xy2x0sl (x y)
   "Convert list of x and y points to x0 (intercept) and sl (slope).
