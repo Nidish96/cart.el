@@ -144,9 +144,6 @@ I often have my tikzpicture environment setup in the following fashion so that i
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
 5. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
-** Quick Bugfixes
-1. In =cart-tikz-draw= when tangents have been specified, the path is not closed smoothly when user says yes to close curve.
-2. =cart-translate-tikz= hangs when there is text where we're selecting. Need to disable all other click events during this.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
