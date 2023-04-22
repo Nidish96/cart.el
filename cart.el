@@ -221,7 +221,7 @@ Optional input parameter OPTS is either a string of options or nil."
       (format "[%s]" opts)
     opts))
 
-(defun cart--top-search (string &optional bound noerror count)
+(defun cart--top-search-forward (string &optional bound noerror count)
   "Search forward for STRING, ensuring point is on top level.
 
 Input parameter STRING is the same as given to `search-forward'.
@@ -230,6 +230,17 @@ that in `search-forward'."
   (let ((p0 (search-forward string bound noerror count)))
     (while (save-excursion (cart--tfm-skip (1- p0)))
       (setq p0 (search-forward string bound noerror count)))
+    p0))
+
+(defun cart--top-search-backward (string &optional bound noerror count)
+  "Search backward for STRING, ensuring point is on top level.
+
+Input parameter STRING is the same as given to `search-forward'.
+Optional parameters BOUND, NOERROR, and COUNT are also identical to
+that in `search-forward'."
+  (let ((p0 (search-backward string bound noerror count)))
+    (while (save-excursion (cart--tfm-skip (1- p0)))
+      (setq p0 (search-backward string bound noerror count)))
     p0))
 
 (defun cart-insert-point (&optional prompt)
@@ -369,7 +380,9 @@ Optional input parameter POS allows user to specify point (defaults to
 
 Code originally from this stackoverflow answer:
 https://emacs.stackexchange.com/a/10405"
+  (LaTeX-narrow-to-environment)
   (let ((ppss (syntax-ppss (or pos (point)))))
+    (widen)
     (when (nth 1 ppss) (char-after (nth 1 ppss)))))
 
 (defun cart--tfm-skip (&optional pos)
@@ -385,11 +398,9 @@ Optional input parameter POS allows user to specify point (defaults to
   \"(point)\")."
   (let ((lopa (cart--last-open-paren (or pos (point)))))
     (if (char-equal (or lopa ?\0) ?\{)
-        (not (string-equal (save-excursion
-                             (search-backward "{")
-                             (left-word)
-                             (word-at-point))
-                           "coordinates"))
+        (if (string-equal (save-excursion (search-backward "{")
+                                          (left-word) (word-at-point))
+                          "coordinates") nil lopa)
       lopa)))
 
 (defun cart--goto-begend (&optional enflg)
@@ -452,24 +463,25 @@ representing the desired translation. If the user does not drag and
 instead, just clicks, a prompt is launched asking the user to click on
 trget point."
   (interactive)
-  (let* ((xys (cart--gmp "Click & drag from start point to end point")))
-    (when (numberp (elt xys 0))
-      (setq xys (list xys (cart--gmp
-                           "You had only clicked on one point. Please click target point now"))))
+  (save-excursion
+    (let* ((xys (cart--gmp "Click & drag from start point to end point")))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp
+                             "You had only clicked on one point. Please click target point now"))))
 
-    (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
-      (if (region-active-p)
-          (narrow-to-region (region-beginning) (region-end))
-        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+      (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
+        (if (region-active-p)
+            (narrow-to-region (region-beginning) (region-end))
+          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
 
-      (cart--translate dxdy)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (move-end-of-line nil)
+        (cart--translate dxdy)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (move-end-of-line nil)
+          (do-auto-fill)
+          (forward-line))
         (do-auto-fill)
-        (forward-line))
-      (do-auto-fill)
-      (widen))))
+        (widen)))))
 
 (defun cart--rotate (&optional tht cpt rnds)
   "Conduct rigid body rotation on current context.
@@ -542,28 +554,29 @@ a rotate field already exists, the existing value is replaced by its
 sum with THT.  If options are present for a node, and no rotate field
 exists, it is inserted."
   (interactive)
-  (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
-         (xys (cart--gmp "Click and drag the rotation target points "))
-         (rnds (y-or-n-p "Rotate Node contents too?")))
-    (when (numberp (elt xys 0))
-      (setq xys (list xys (cart--gmp
-                           "You had only clicked on one point. Please click target point now"))))
+  (save-excursion
+    (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
+           (xys (cart--gmp "Click and drag the rotation target points "))
+           (rnds (y-or-n-p "Rotate Node contents too?")))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp
+                             "You had only clicked on one point. Please click target point now"))))
 
-    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
+      (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
 
-    (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
-      (if (region-active-p)
-          (narrow-to-region (region-beginning) (region-end))
-        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+      (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
+        (if (region-active-p)
+            (narrow-to-region (region-beginning) (region-end))
+          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
 
-      (cart--rotate theta xyref rnds)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (move-end-of-line nil)
+        (cart--rotate theta xyref rnds)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (move-end-of-line nil)
+          (do-auto-fill)
+          (forward-line))
         (do-auto-fill)
-        (forward-line))
-      (do-auto-fill)
-      (widen))))
+        (widen)))))
 
 (defun cart--scale (&optional sc cpt snds)
   "Conduct scaling in the current context.
@@ -630,27 +643,28 @@ a scale field already exists, the existing value is replaced by its
 product with SC.  If options are present for a node, and no scale field
 exists, it is inserted."
   (interactive)
-  (let* ((xyref (or (cart--gmp "Click on the center of scaling (RET to use origin) ") '(0 0)))
-         (xys (cart--gmp "Click and drag the scaling target points "))
-         (snds (y-or-n-p "Scale Node contents too?")))
-    (when (numberp (elt xys 0))
-      (setq xys (list xys (cart--gmp
-                           "You had only clicked on one point. Please click target point now"))))
-    (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys)) ;; Relative Coordinates
+  (save-excursion
+    (let* ((xyref (or (cart--gmp "Click on the center of scaling (RET to use origin) ") '(0 0)))
+           (xys (cart--gmp "Click and drag the scaling target points "))
+           (snds (y-or-n-p "Scale Node contents too?")))
+      (when (numberp (elt xys 0))
+        (setq xys (list xys (cart--gmp
+                             "You had only clicked on one point. Please click target point now"))))
+      (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys)) ;; Relative Coordinates
 
-    (let ((sc (apply '/ (reverse (mapcar 'cart--norm xys)))))
-      (if (region-active-p)
-          (narrow-to-region (region-beginning) (region-end))
-        (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
+      (let ((sc (apply '/ (reverse (mapcar 'cart--norm xys)))))
+        (if (region-active-p)
+            (narrow-to-region (region-beginning) (region-end))
+          (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))
 
-      (cart--scale sc xyref snds)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (move-end-of-line nil)
+        (cart--scale sc xyref snds)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (move-end-of-line nil)
+          (do-auto-fill)
+          (forward-line))
         (do-auto-fill)
-        (forward-line))
-      (do-auto-fill)
-      (widen))))
+        (widen)))))
 
 (defun cart-tikz-move-point ()
   "Move a selected point to a selected target location."
@@ -699,7 +713,7 @@ exists, it is inserted."
             (search-forward ")"))))
 
       (goto-char (1+ pt))
-      (delete-region (point) (cart--top-search "("))
+      (delete-region (point) (cart--top-search-forward "("))
 
       (widen))))
 
