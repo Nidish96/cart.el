@@ -510,7 +510,7 @@ RNDS is a boolean governing whether node contents should be rotated or not."
                (Tcds (list (+ (- (* Cth (elt cdsrel 0)) (* Sth (elt cdsrel 1))) (or (elt cpt 0) 0))
                            (+ (+ (* Sth (elt cdsrel 0)) (* Cth (elt cdsrel 1))) (or (elt cpt 1) 0)))))
           (insert (cart--fmt-point Tcds))))))
-  ;; Rotate nodes too, if needed
+  Rotate nodes too, if needed
   (when rnds
     (goto-char (point-min))
     (while (search-forward "node" nil t)
@@ -567,6 +567,7 @@ exists, it is inserted."
       (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
 
       (let ((theta (cart--angle (elt xys 0) (elt xys 1))))
+        (message "%s" (region-active-p))
         (if (region-active-p)
             (narrow-to-region (region-beginning) (region-end))
           (narrow-to-region (cart--goto-begend) (cart--goto-begend t)))

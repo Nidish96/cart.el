@@ -144,6 +144,8 @@ I often have my tikzpicture environment setup in the following fashion so that i
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
 5. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
+** Immediate Bugfixes
+1. Rotate and Scale operations operate on unrelated nodes it is chosen to operate on nodes too.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
