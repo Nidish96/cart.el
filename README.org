@@ -123,8 +123,9 @@ I often have my tikzpicture environment setup in the following fashion so that i
 * Possible Improvements
 1. Integration of Tikz/Pgf variables.
 2. Making node information for each point in draw possible as an option (instead of having to click on successive points repeatedly and have common node properties).
-3. =cart-scale-tikz= currently doesn't scale circle radius fields. Fixing this just for circles seems easy enough but something more general would be better.
-4. Some mechanism simulating real-time feedback.   
+3. =cart-scale-tikz= currently doesn't scales circle radius fields manually. Something more general would be better.
+4. Units are currently not supported for the node attributes (like specifying radius as =3pt=). These will be considered correctly only if provided along with a decimal point. This is an inconvenience that needs to be addressed.
+5. Some mechanism simulating real-time feedback.   
    Two ideas for this:
    1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
       This becomes quite attractive from Emacs 29, which allows explicitly setting background transparency independent of the foreground as follows (following only works in emacs 29+).
@@ -138,14 +139,11 @@ I often have my tikzpicture environment setup in the following fashion so that i
         (setq-local mode-line-format nil)
       #+end_src
       Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
-
    2. Using GNOME's built-in mouse location feature. Calling the following command, for instance, will make the mouse location get highlighted each time lCtrl is pressed. This is an out-of-emacs solution, but sounds simple, if setup well.
       #+begin_src sh
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
-5. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
-** Immediate Bugfixes
-1. Rotate and Scale operations operate on unrelated nodes it is chosen to operate on nodes too.
+6. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.

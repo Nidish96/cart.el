@@ -411,10 +411,13 @@
 
   Code originally from this stackoverflow answer:
   https://emacs.stackexchange.com/a/10405"
-    (LaTeX-narrow-to-environment)
-    (let ((ppss (syntax-ppss (or pos (point)))))
-      (widen)
-      (when (nth 1 ppss) (char-after (nth 1 ppss)))))
+    (let ((p0 (point-min))
+          (p1 (point-max)))
+      (LaTeX-narrow-to-environment)
+      (let ((ppss (syntax-ppss (or pos (point)))))
+        (widen)
+        (narrow-to-region p0 p1)
+        (when (nth 1 ppss) (char-after (nth 1 ppss))))))
 
   (defun cart--tfm-skip (&optional pos)
     "Return t if current point (or POS) can be skipped for transformation.
@@ -543,7 +546,7 @@
                  (Tcds (list (+ (- (* Cth (elt cdsrel 0)) (* Sth (elt cdsrel 1))) (or (elt cpt 0) 0))
                              (+ (+ (* Sth (elt cdsrel 0)) (* Cth (elt cdsrel 1))) (or (elt cpt 1) 0)))))
             (insert (cart--fmt-point Tcds))))))
-    Rotate nodes too, if needed
+    ;; Rotate nodes too, if needed
     (when rnds
       (goto-char (point-min))
       (while (search-forward "node" nil t)
@@ -638,6 +641,15 @@
           (let* ((cdsrel (cart--vecop '- cds (or cpt '(0 0))))
                  (Tcds (cart--vecop '+ (cart--vecop '* cdsrel sc) (or cpt '(0 0)))))
             (insert (cart--fmt-point Tcds))))))
+    ;; Scale circle objects, if existing
+    (goto-char (point-min))
+    (while (search-forward "radius" (point-max) t)
+      (when (eql (cart--last-open-paren) (string-to-char "["))
+        (right-word)
+        (let ((nwang (* (number-at-point) sc)))
+          (skip-chars-backward "0-9.-")
+          (delete-region (point) (progn (skip-chars-forward "0-9.-") (point)))
+          (insert (format cart--nfmt nwang)))))
     ;; Scale nodes too, if needed
     (when snds
       (goto-char (point-min))
