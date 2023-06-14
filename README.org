@@ -160,6 +160,9 @@ I often have my tikzpicture environment setup in the following fashion so that i
        \end{block}};
    #+end_src
 
+** Desirable features
+1. It would be nice to have a "draw shape around objects" feature.
+2. It would be good to have cart.el aware of the different "objects" in a drawing. 
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
