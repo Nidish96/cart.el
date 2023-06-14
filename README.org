@@ -144,19 +144,17 @@ I often have my tikzpicture environment setup in the following fashion so that i
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
 6. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
-** Bugs to fix
-1. Translating the following fails
+** Necessary Bugfixes
+1. Applying transformations on the following node object also modifies the content:
    #+begin_src latex
-     \node[text width=0.5\textwidth, visible on=<3->] at (-3.3514, -0.4658)
-     {\begin{block}{\centering CX-A Slow-flow Equations} 
-         \begin{equation*}
-           \frac{d}{dt}
-           \begin{bmatrix} q\\\\ \beta \end{bmatrix} = \frac{1}{2\dot{\sigma}}
-           \begin{bmatrix}
-             -2\zeta\omega_0 \dot{\sigma} q + \Im\{\vc{\psi}^H \vc{f_e} e^{-j\beta}\}\\\\
-             (\omega_0^2-\dot{\sigma}^2)-\frac{1}{q}\Re\{\vc{\psi}^H \vc{f_e} e^{-j\beta}\}
-           \end{bmatrix}
-         \end{equation*}
+     \node[text width=0.175\textwidth, visible on=<1->] at (-3.973154,
+     0.890411) {\begin{block}{$Nh_{max}=1$}
+         \begin{description}
+         \item[PHB]
+           $$ h= \begin{bmatrix}0\\ 35\\ 36\end{bmatrix} $$
+         \item[QPHB]
+           $$ h= \begin{bmatrix}(0,0)\\ (0,1)\\ (1,0)\end{bmatrix} $$
+         \end{description}
        \end{block}};
    #+end_src
 
