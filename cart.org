@@ -54,7 +54,7 @@
 ** Define Minor-Mode and Global Variables
 #+begin_src emacs-lisp :tangle yes :results none
   (defcustom cart--XY_0sl '((X . (0.0 1.0))
-                          (Y . (0.0 1.0)))
+                            (Y . (0.0 1.0)))
     "These are the calibration values.
   The behavior will be identical across sessions if these are saved."
     :type 'cons

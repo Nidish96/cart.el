@@ -1056,6 +1056,34 @@
   \end{tikzpicture}
 \end{frame}
 
+
+\begin{frame}
+  \frametitle{Test Frame 3}
+  \begin{tikzpicture}[overlay,remember picture]
+    \pgftransformshift{\pgfpointanchor{current page}{center}}
+    
+    \node[text width=0.3\textwidth, rotate=40.1543, scale=0.5268,
+    visible on=<2->] at
+    (2.6015, 0.0975)
+    {\begin{block}{new}
+        This is a block!
+      \end{block}};
+
+    \draw (-4.8919, 1.3014) .. controls (-4.4865, 2.5068) and
+    (-4.4865, 2.5068) .. (-3.4595, 2.1096) .. controls(-1.3514, 2.0274) and (-3.1081, 0.7808) .. (-3.7568, -0.2740) .. controls
+    (-4.4054, -1.3288) and (-3.6351, -1.1370) ..(-1.9189, -3.4521)
+    .. controls (-1.4189, -2.3151) and (-1.3784, -1.4658) .. (-1.0946,
+    -0.2740) .. controls (-0.8108, 0.9178) and (-0.6622, 1.0411)
+    .. (0.3243, 0.8630) .. controls (1.3108, 0.6849) and (1.3514,
+    0.9589) .. (1.7568, 1.9315) .. controls (2.1622, 2.9041) and
+    (2.7297, 2.1507) .. (3.4459, 1.7260);
+
+    \draw (-2.0811, -1.0548) circle[radius=0.9299];
+
+    \draw plot [smooth] coordinates {(3.2162, 3.2603) (0.8378, 3.1096)
+      (-1.2027, 3.8630) (-3.8649, 2.9863) (-4.7027, 0.8904)};
+  \end{tikzpicture}
+\end{frame}
 \end{document}
 
 %%% Local Variables:
