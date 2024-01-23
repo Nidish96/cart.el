@@ -94,7 +94,7 @@
           (cons (cart--key "s") #'cart-scale-tikz)
           (cons (cart--key "m") #'cart-tikz-move-point)
           (cons (cart--key "k") #'cart-tikz-delete-point)))
-#+end_src
+ #+end_src
 ** Define Math utility functions
 #+begin_src emacs-lisp :tangle yes
   (defun cart--xy2x0sl (x y)

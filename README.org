@@ -145,7 +145,7 @@ I often have my tikzpicture environment setup in the following fashion so that i
       #+end_src
 6. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
 ** Necessary Bugfixes
-1. Applying transformations on the following node object also modifies the content:
+1. Applying transformations on the following node objects also modifies the content because they are also within (0,1):
    #+begin_src latex
      \node[text width=0.175\textwidth, visible on=<1->] at (-3.973154,
      0.890411) {\begin{block}{$Nh_{max}=1$}
@@ -156,7 +156,14 @@ I often have my tikzpicture environment setup in the following fashion so that i
            $$ h= \begin{bmatrix}(0,0)\\ (0,1)\\ (1,0)\end{bmatrix} $$
          \end{description}
        \end{block}};
-   #+end_src
+
+     \node[visible on=<2>, text width=0.3\textwidth] at (-4.0675,
+     -1.0274) {\begin{block}{Lognormal Distribution}
+         \begin{align*}
+           k = e^{\mu_\ell+\sigma_\ell Z},\quad Z\sim \mathcal{N}(0, 1)
+         \end{align*}
+       \end{block}};
+   #+end_src 
 2. Translation on the following gives errors:
    #+begin_src latex
      \node[text width=0.6\textwidth] at (-3.4189, -3.1370) {
