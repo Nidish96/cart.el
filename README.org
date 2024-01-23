@@ -163,7 +163,18 @@ I often have my tikzpicture environment setup in the following fashion so that i
            k = e^{\mu_\ell+\sigma_\ell Z},\quad Z\sim \mathcal{N}(0, 1)
          \end{align*}
        \end{block}};
-   #+end_src 
+   #+end_src
+   + Same issue, but the following example completely craps out (because of the =\left(= and =\right)=.
+     #+begin_src latex
+       \node[visible on=<2>, text width=0.3\textwidth] at (-4.0675,
+       -1.0274) {\begin{block}{Lognormal Distribution}
+           \begin{align*}
+             K &= e^{\mu_\ell+\sigma_\ell Z},\, Z\sim \\
+             \langle K\rangle &= \ln \left(\frac{\mu_\ell^2}{\sqrt{\mu_\ell^2+\sigma_\ell^2}}\right)\\
+             \langle [K]^2\rangle &= \ln \left(1+\frac{\sigma_\ell^2}{\mu_\ell^2}\right)
+           \end{align*}
+         \end{block}};
+     #+end_src
 2. Translation on the following gives errors:
    #+begin_src latex
      \node[text width=0.6\textwidth] at (-3.4189, -3.1370) {
@@ -180,6 +191,7 @@ I often have my tikzpicture environment setup in the following fashion so that i
 1. It would be nice to have a "draw shape around objects" feature.
 2. It would be good to have cart.el aware of the different "objects" in a drawing.
 3. Incorporate includegraphics trim into the ecosystem.
+4. Switch to using treesitter for everything?
 * Recommended Reading/Interesting Repositories
 1. The [[https://pgf-tikz.github.io/pgf/pgfmanual.pdf][documentation of Tikz & PGF]].
 2. The [[https://github.com/misohena/el-easydraw][el-easydraw]] package by [[https://github.com/misohena][misohena]] is WYSIWYG implementation of SVG drawing in emacs.
