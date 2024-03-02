@@ -45,7 +45,7 @@
 (require 'latex)
 
 (defcustom cart--XY_0sl '((X . (0.0 1.0))
-                        (Y . (0.0 1.0)))
+                          (Y . (0.0 1.0)))
   "These are the calibration values.
 The behavior will be identical across sessions if these are saved."
   :type 'cons
@@ -83,8 +83,7 @@ The behavior will be identical across sessions if these are saved."
         (cons (cart--key "t") #'cart-translate-tikz)
         (cons (cart--key "r") #'cart-rotate-tikz)
         (cons (cart--key "s") #'cart-scale-tikz)
-        (cons (cart--key "m") #'cart-tikz-move-point)
-        (cons (cart--key "k") #'cart-tikz-delete-point)))
+        (cons (cart--key "m") #'cart-tikz-move-point)))
 
 (defun cart--xy2x0sl (x y)
   "Convert list of x and y points to x0 (intercept) and sl (slope).
@@ -144,12 +143,12 @@ of the vector."
 
 (defun cart--gmc (&optional prompt)
   "Prompt to click on frame and return the xy coordinates.
-Two behaviors are possible: (if clicked) single point returned as a
-list with the two coordinates; (if dragged) start and end points of
-dragged region returned as a list of two point-lists (as above).
+    Two behaviors are possible: (if clicked) single point returned as a
+    list with the two coordinates; (if dragged) start and end points of
+    dragged region returned as a list of two point-lists (as above).
 
-The optional parameter PROMPT allows one to specify a user-facing
-prompt.  The prompt defaults to 'Click anywhere' if not provided."
+    The optional parameter PROMPT allows one to specify a user-facing
+    prompt.  The prompt defaults to 'Click anywhere' if not provided."
   (if (string-equal (cart--car-or (read-event
                                    (or prompt "Click anywhere")))
                     "down-mouse-1")
@@ -163,22 +162,36 @@ prompt.  The prompt defaults to 'Click anywhere' if not provided."
           (list (mapcar 'float (list (car xy) (cdr xy)))
                 (mapcar 'float (list (car xye) (cdr xye))))))))
 
-(defun cart--2dc (&optional prompt)
+(defun cart--2dc (&optional prompt xd yd xn yn)
   "Prompt to enter coordinates in document CS and return as list.
-The user is prompted with the string
- \"(PROMPT): Enter Q coordinate: \" where Q is (X,Y) and PROMPT is an
-optional parameter."
+    The user is prompted with the string
+     \"(PROMPT): Enter Q coordinate: \" where Q is (X,Y) and PROMPT is an
+    optional parameter.
+   XD and YD are the defaults (defaults to 0).
+   XN and YN are what X, Y should NOT be."
   (interactive)
-  (let ((x (float (read-number (format "(%s): Enter X coordinate: " (or prompt "")) 0)))
-        (y (float (read-number (format "(%s): Enter Y coordinate: " (or prompt "")) 0))))
+  (let ((x (float (read-number (format "(%s): Enter X coordinate: "
+                                       (or prompt "")) (or xd 0))))
+        (y (float (read-number (format "(%s): Enter Y coordinate: "
+                                       (or prompt "")) (or yd 0)))))
+    (while (or (eql x xn) (eql y yn))
+      (read-char (concat
+                  (format "Choose a point such that x!=%d, y!=%d. " xn yn)
+                  (format "Given Point: (%d,%d). " x y)
+                  "Press any key to continue."))
+      (setq x (float (read-number (format "(%s): Enter X coordinate: "
+                                          (or prompt "")) (or xd 0))))
+      (setq y (float (read-number (format "(%s): Enter Y coordinate: "
+                                          (or prompt "")) (or yd 0)))))
     (list x y)))
 
 (defun cart-calibrate ()
   "Conduct interactive calibration to set the `cart--XY_0sl' variable."
   (interactive)
-  (let* ((XY1 (cart--2dc "Point 1"))
+  (read-char "Choose two points for calibration. Press any key to continue.")
+  (let* ((XY1 (cart--2dc "Point 1" 0 0))
          (xy1 (save-excursion (cart--gmc "Click on Point 1")))
-         (XY2 (cart--2dc "Point 2"))
+         (XY2 (cart--2dc "Point 2" 1 1 (elt XY1 0) (elt XY1 1)))
          (xy2 (save-excursion (cart--gmc "Click on Point 2")))
          (Xs (mapcar #'(lambda (x) (elt x 0)) (list XY1 XY2)))
          (Ys (mapcar #'(lambda (x) (elt x 1)) (list XY1 XY2)))
@@ -188,6 +201,7 @@ optional parameter."
          (Y_0sl (cart--xy2x0sl Ys ys)))
     (setf (alist-get 'X cart--XY_0sl) X_0sl)
     (setf (alist-get 'Y cart--XY_0sl) Y_0sl)
+    (message "Calibration done!")
     (list XY1 XY2 xy1 xy2)))
 
 (defun cart--gmp (&optional prompt)
@@ -384,7 +398,7 @@ Code originally from this stackoverflow answer:
 https://emacs.stackexchange.com/a/10405"
   (let ((p0 (point-min))
         (p1 (point-max)))
-    (LaTeX-narrow-to-environment)
+    ;; (LaTeX-narrow-to-environment)
     (let ((ppss (syntax-ppss (or pos (point)))))
       (widen)
       (narrow-to-region p0 p1)
@@ -397,16 +411,18 @@ Transformation includes translate & rotate as implemented in
 `cart-translate-tikz' and `cart-rotate-tikz' respectively.
 It works by requiring either that the point is at the top (not bound
 by any parens), or if bound by \"{...}\", it must belong to a
-coordinate set (as in `cart-tikz-smooth').
+coordinate set (as in `cart-tikz-smooth'). It also returns t if inside a comment. 
 
 Optional input parameter POS allows user to specify point (defaults to
   \"(point)\")."
-  (let ((lopa (cart--last-open-paren (or pos (point)))))
-    (if (char-equal (or lopa ?\0) ?\{)
-        (if (string-equal (save-excursion (search-backward "{")
-                                          (left-word) (word-at-point))
-                          "coordinates") nil lopa)
-      lopa)))
+  (save-excursion
+    (let ((ppss (syntax-ppss (or pos (point))))
+          (lopa (cart--last-open-paren (or pos (point)))))
+      (if (char-equal (or lopa ?\0) ?\{)
+          (if (string-equal (save-excursion (search-backward "{")
+                                            (left-word) (word-at-point))
+                            "coordinates") nil lopa)
+        (or (nth 4 ppss) lopa)))))
 
 (defun cart--goto-begend (&optional enflg)
   "Move pointer to either the beginning or end of current statement.
@@ -429,7 +445,7 @@ Optional parameter POS stores a starting point that defaults to `(point)'."
   (save-excursion
     (goto-char (or pos (point)))
     (let ((p0 (point))
-          (p1 (search-forward ")")))
+          (p1 (1- (search-forward ")"))))
       (mapcar 'string-to-number
               (split-string
                (replace-regexp-in-string
@@ -562,7 +578,7 @@ exists, it is inserted."
   (save-excursion
     (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
            (xys (cart--gmp "Click and drag the rotation target points "))
-           (rnds (y-or-n-p "Rotate Node contents too?")))
+           (rnds (y-or-n-p "Rotate node contents too?")))
       (when (numberp (elt xys 0))
         (setq xys (list xys (cart--gmp
                              "You had only clicked on one point. Please click target point now"))))
@@ -661,7 +677,7 @@ exists, it is inserted."
   (save-excursion
     (let* ((xyref (or (cart--gmp "Click on the center of scaling (RET to use origin) ") '(0 0)))
            (xys (cart--gmp "Click and drag the scaling target points "))
-           (snds (y-or-n-p "Scale Node contents too?")))
+           (snds (y-or-n-p "Scale node contents too?")))
       (when (numberp (elt xys 0))
         (setq xys (list xys (cart--gmp
                              "You had only clicked on one point. Please click target point now"))))
@@ -709,7 +725,7 @@ exists, it is inserted."
       (widen))))
 
 (defun cart-tikz-delete-point ()
-  "Delete a selected point."
+  "Delete a selected point. EXPERIMENTAL. USE AT OWN RISK."
   (interactive)
   (save-excursion
     (let ((xy (cart--gmp "Select point to delete"))

@@ -175,15 +175,7 @@ I often have my tikzpicture environment setup in the following fashion so that i
            \end{align*}
          \end{block}};
      #+end_src
-2. Translation on the following gives errors:
-   #+begin_src latex
-     \node[text width=0.6\textwidth] at (-3.4189, -3.1370) {
-       \begin{block}{Dahl Element}
-         $$ \frac{df}{du} = k_t {\left|1-\frac{f}{F_s} sgn(\dot{u})\right|}^n
-         sgn\left\right) $$
-       \end{block}};            
-   #+end_src
-3. Move point doesn't seem to work properly if there is no space between the previous "--" and the coordinate parenthesis, for example, in the following, one of the dashes in "--" gets removed if the point is moved.
+2. Move point doesn't seem to work properly if there is no space between the previous "--" and the coordinate parenthesis, for example, in the following, one of the dashes in "--" gets removed if the point is moved.
    #+begin_src latex
      \draw[red, thick, -Latex] (2.3784, -0.6438) --(1.6351, -3.0274);
    #+end_src
