@@ -6,11 +6,11 @@
 
 It must be noted that although =cart.el= improves the interaction/feedback while using Tikz, it is still not exactly WYSIWYG, since the latex file has to be compiled after each insertion of coordinates.
 
-_*UPDATE VER 0.2:*_ Cart.el now supports a basic Graphical Front-End based on =artist-mode=!
+*UPDATE VER 0.2* : Cart.el now supports a basic Graphical Front-End based on =artist-mode=!
 
-_*Appeal to contributors*_: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it.
+*Appeal to contributors* : I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it.
 
-_*TODO*_ : Video Demo. I'm waiting for the package to stabilize before I make any proper publicity/put it on MELPA. It's become a staple for me, however.
+*TODO* : Video Demo. I'm waiting for the package to stabilize before I make any proper publicity/put it on MELPA. It's become a staple for me, however.
 * Configuration
 Configuration is pretty standard. Adding these lines to your emacs startup is all that is needed:
 #+begin_src emacs-lisp :tangle yes
