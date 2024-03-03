@@ -2,14 +2,15 @@
 #+STARTUP: indent
 
 * Introduction
-=cart.el= defines interactive elisp functions for obtaining coordinates for tikz commands graphically following a calibration. More detailed documentation and a video demo will be uploaded soon.
+=cart.el= defines interactive elisp functions for obtaining coordinates for tikz commands graphically following a calibration.
 
 It must be noted that although =cart.el= improves the interaction/feedback while using Tikz, it is still not exactly WYSIWYG, since the latex file has to be compiled after each insertion of coordinates.
 
 _*UPDATE VER 0.2:*_ Cart.el now supports a basic Graphical Front-End based on =artist-mode=!
 
-*_Appeal to contributors_*: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it.
+_*Appeal to contributors*_: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it.
 
+_*TODO*_ : Video Demo. I'm waiting for the package to stabilize before I make any proper publicity/put it on MELPA. It's become a staple for me, however.
 * Configuration
 Configuration is pretty standard. Adding these lines to your emacs startup is all that is needed:
 #+begin_src emacs-lisp :tangle yes
@@ -152,41 +153,11 @@ I often have my tikzpicture environment setup in the following fashion so that i
 3. Units are currently not supported for the node attributes (like specifying radius as =3pt=). These will be considered correctly only if provided along with a decimal point. This is an inconvenience that needs to be addressed.
 4. Some mechanism simulating graphical feedback.
    Two ideas for this:
-   1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done.
-      Here's elisp code to create a transparent frame without modeline & minibuffer.
-      Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution.
-      How expensive this will be is up for discussion.
-      This becomes quite attractive from Emacs 29, which allows explicitly setting background transparency independent of the foreground as follows (following only works in emacs 29+).
-      #+begin_src emacs-lisp :results none
-        (setq cart--vis-alpha 10)
-        (setq nfrm (make-frame-on-current-monitor '((fullscreen . maximized)
-                                                    (foreground-color . "black")
-                                                    (background-color . "white")
-                                                    (cursor-color . "white")
-                                                    (alpha-background . ,cart--vis-alpha))))
-
-
-        (select-frame nfrm)
-        (toggle-frame-fullscreen)
-        (find-file "cart.el drawing buffer")
-        (artist-mode)
-        (artist-select-op-straight-line)
-        (artist-clear-buffer (current-buffer))
-        (setq-local mode-line-format nil)
-
-        (setq ev (read-event))
-        (artist-down-mouse-1 ev)
-        ;; (setq xys (cart--gmc))
-        ;; (setq x1 (elt (elt xys 0) 0))
-        ;; (setq y1 (elt (elt xys 0) 1))
-        ;; (setq x2 (elt (elt xys 1) 0))
-        ;; (setq y2 (elt (elt xys 1) 1))
-
-        ;; (artist-draw-line x1 y1 x2 y2)
-      #+end_src
-      Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
-      *This has been implemented now!*
-   2. Using GNOME's built-in mouse location feature. Calling the following command, for instance, will make the mouse location get highlighted each time lCtrl is pressed. This is an out-of-emacs solution, but sounds simple, if setup well.
+   1. We currently support spaning a *transparent frame* under artist-mode and providing ASCII feedback on it.
+      This works quite nicely on emacs 29.1.
+   2. Using GNOME's built-in mouse location feature for mouse click highlights?
+      I am hesitant to incorporate this because this becomes platform dependent in this case.
+      Calling the following command, for instance, will make the mouse location get highlighted each time lCtrl is pressed. This is an out-of-emacs solution, but sounds simple, if setup well.
       #+begin_src sh
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
