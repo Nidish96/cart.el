@@ -51,6 +51,11 @@ The behavior will be identical across sessions if these are saved."
   :type 'cons
   :group 'cart)
 
+(defcustom cart--visual-feedback nil
+  "Set to t to have artist-mode based visual feedback (Experimental). Works only after Emacs 29.1."
+  :type 'cons
+  :group 'cart)
+
 (defcustom cart-keymap-prefix "C-x a"
   "The prefix for `cart-mode' key bindings."
   :type 'string
@@ -63,6 +68,9 @@ The behavior will be identical across sessions if these are saved."
 
 (defvar cart--prev-pt nil
   "Previous point inserted in current session.")
+
+(defvar cart--vis-buffer nil
+  "Visualization buffer")
 
 (defun cart--key (key)
   "Prefix keymap-prefix to KEY and construct keybinding."
@@ -137,30 +145,93 @@ Input parameter VEC is a two-number-list storing the x and y components
 of the vector."
   (sqrt (apply '+ (mapcar (lambda (x) (expt x 2)) vec))))
 
+(defun cart-visual-toggle (&optional op)
+  "Toggle visualization. If OP is non-nil, then visualization is enabled."
+  (interactive)
+  (setq cart--visual-feedback (not cart--visual-feedback))
+  (if cart--visual-feedback
+      (message "cart.el: Visual feedback enabled.")
+    (message "cart.el: Visual feedback disabled."))
+  )
+
+(defun cart--make-vis-buffer (&optional op)
+  "Cart-transparent buffer manipulation.
+   If OP is non-nil, buffer is cleared."
+  (let ((nfrm (make-frame-on-current-monitor '((fullscreen . maximized)
+                                               (foreground-color . "blue")
+                                               (background-color . "white")
+                                               (cursor-color . "white")
+                                               (alpha-background . 40)))))
+    (select-frame nfrm)
+    (toggle-frame-fullscreen)
+    (find-file "cart.el drawing buffer")
+    (artist-mode)
+    (setq-local mode-line-format nil)
+    (setq cart--vis-buffer (current-buffer))
+    ;; (artist-select-op-straight-line)
+    ;; (artist-toggle-rubber-banding)
+    )  
+  (if op (artist-clear-buffer (current-buffer))))
+
+(defun cart--vis-draw (ev)
+  "Draw the event EV using artist-mode."
+  ;; (artist-select-op-straight-line)
+  ;; (artist-mouse-draw-2points ev))
+  (artist-down-mouse-1 ev))
+
 (defun cart--car-or (ARG)
   "Return car of ARG if ARG is a cons, ARG otherwise."
   (if (consp ARG) (car ARG) ARG))
 
-(defun cart--gmc (&optional prompt)
+(defun cart--gmc (&optional prompt gpers)
   "Prompt to click on frame and return the xy coordinates.
     Two behaviors are possible: (if clicked) single point returned as a
     list with the two coordinates; (if dragged) start and end points of
     dragged region returned as a list of two point-lists (as above).
 
     The optional parameter PROMPT allows one to specify a user-facing
-    prompt.  The prompt defaults to 'Click anywhere' if not provided."
-  (if (string-equal (cart--car-or (read-event
-                                   (or prompt "Click anywhere")))
-                    "down-mouse-1")
-      (let* ((event (read-event))  ;; read the mouse up/drag event
-             (pos (event-start event))
-             (pose (event-end event))
-             (xy (posn-x-y pos))
-             (xye (posn-x-y pose)))
-        (if (eq pos pose)
-            (mapcar 'float (list (car xy) (cdr xy)))
-          (list (mapcar 'float (list (car xy) (cdr xy)))
-                (mapcar 'float (list (car xye) (cdr xye))))))))
+    prompt.  The prompt defaults to 'Click anywhere' if not provided.
+    The optional parameter GPERS controls the behavior of the graphical
+    (transparent) buffer. The following values are possible.
+    0: No graphical feedback.
+    1: Create graphical feedback buffer.
+    2: Use the graphical feedback buffer created at a previous step.
+    3: Delete the graphical feedback buffer. "
+  (unless cart--visual-feedback (setq gpers 0))
+  ;; (when cart--visual-feedback (cart--make-vis-buffer t))
+  (let ((cbuf (current-buffer)))
+    (cond ((eql 0 (or gpers 0)))  ; do nothing
+          (t (if cart--vis-buffer
+                 (switch-to-buffer-other-frame cart--vis-buffer)
+               (cart--make-vis-buffer t))) ; switch to vis buffer if exists
+          )
+    (let ((basev (read-event (or prompt "Click anywhere"))))
+      (when (string-equal (cart--car-or basev) "switch-frame")
+          (setq basev (read-event (or prompt "Click anywhere"))))
+      (if (string-equal (cart--car-or basev) "down-mouse-1")
+          (let* ((event (read-event))  ;; read the mouse up/drag event
+                 (pos (event-start event))
+                 (pose (event-end event))
+                 (xy (posn-x-y pos))
+                 (xye (posn-x-y pose)))
+            (when (> (or gpers 0) 0)
+              (picture-mouse-set-point (list 'down-mouse-1 (event-start event)))
+              (artist-key-set-point)
+
+              (picture-mouse-set-point (list 'down-mouse-1 (event-end event)))
+              (artist-key-set-point)
+
+              (cond ((eql 2 (or gpers 0))
+                     (switch-to-buffer-other-frame cbuf))
+                    ((eql 3 (or gpers 0))
+                     (read-char "Press any key to continue.")
+                     (delete-frame)
+                     (setq cart--vis-buffer nil))))
+            (if (eq pos pose)
+                (mapcar 'float (list (car xy) (cdr xy)))
+              (list (mapcar 'float (list (car xy) (cdr xy)))
+                    (mapcar 'float (list (car xye) (cdr xye)))))
+            )))))
 
 (defun cart--2dc (&optional prompt xd yd xn yn)
   "Prompt to enter coordinates in document CS and return as list.
@@ -189,10 +260,11 @@ of the vector."
   "Conduct interactive calibration to set the `cart--XY_0sl' variable."
   (interactive)
   (read-char "Choose two points for calibration. Press any key to continue.")
-  (let* ((XY1 (cart--2dc "Point 1" 0 0))
-         (xy1 (save-excursion (cart--gmc "Click on Point 1")))
+  (let* ((cbuf (current-buffer))
+         (XY1 (cart--2dc "Point 1" 0 0))
+         (xy1 (save-excursion (cart--gmc "Click on Point 1" 2)))
          (XY2 (cart--2dc "Point 2" 1 1 (elt XY1 0) (elt XY1 1)))
-         (xy2 (save-excursion (cart--gmc "Click on Point 2")))
+         (xy2 (save-excursion (cart--gmc "Click on Point 2" 3)))
          (Xs (mapcar #'(lambda (x) (elt x 0)) (list XY1 XY2)))
          (Ys (mapcar #'(lambda (x) (elt x 1)) (list XY1 XY2)))
          (xs (mapcar #'(lambda (x) (elt x 0)) (list xy1 xy2)))
@@ -204,17 +276,18 @@ of the vector."
     (message "Calibration done!")
     (list XY1 XY2 xy1 xy2)))
 
-(defun cart--gmp (&optional prompt)
+(defun cart--gmp (&optional prompt gpers)
   "Prompt to click on frame and return the xy coordinates in drawing CS.
-Identical to `cart--gmc' except for the fact that this subsequently transforms
-the point(s) through a call to `cart--XY2xy'.
-Two behaviors are possible: (if clicked) single point returned as a
-list with the two coordinates; (if dragged) start and end points of
-dragged region returned as a list of two point-lists (as above).
+    Identical to `cart--gmc' except for the fact that this subsequently transforms
+    the point(s) through a call to `cart--XY2xy'.
+    Two behaviors are possible: (if clicked) single point returned as a
+    list with the two coordinates; (if dragged) start and end points of
+    dragged region returned as a list of two point-lists (as above).
 
-The optional parameter PROMPT allows one to specify a user-facing
-prompt.  The prompt defaults to 'Click anywhere' if not provided."
-  (let ((XYs (cart--gmc prompt)))
+    The optional parameter PROMPT allows one to specify a user-facing
+    prompt.  The prompt defaults to 'Click anywhere' if not provided.
+    Second optional parameter GPERS is pass to cart--gmc."
+  (let ((XYs (cart--gmc prompt gpers)))
     (if (listp (elt XYs 0))
         (mapcar 'cart--XY2xy XYs)
       (cart--XY2xy XYs))))
@@ -257,13 +330,14 @@ that in `search-forward'."
       (setq p0 (search-backward string bound noerror count)))
     p0))
 
-(defun cart-insert-point (&optional prompt)
+(defun cart-insert-point (&optional prompt gpers)
   "Query for and insert clicked coordinates \"(x, y)\" at the current point.
 
-Optional input parameter PROMPT allows setting the user-facing
-prompt.   Defaults to \"Click on Point\"."
+   Optional input parameter PROMPT allows setting the user-facing
+   prompt.   Defaults to \"Click on Point\".
+   Parameter GPERS is sent to `cart--gmc` through `cart--gmp`. Defaults to 3."
   (interactive)
-  (let ((xy (cart--gmp prompt)))
+  (let ((xy (save-window-excursion (cart--gmp prompt (or gpers 3)))))
     (when xy (insert (cart--fmt-point xy)) t)))
 
 (defun cart-tikz-draw (&optional dopts nopts)
@@ -281,10 +355,13 @@ Optional input parameters DOPTS and NOPTS are strings of draw and node
 options respectively. The user receives prompts for populating these."
   (interactive "sDraw options: \nsNode options: ")
   (insert (format "\\draw%s " (cart--optbr dopts)))
-  (let ((ctflag nil))
-    (while (setq xys
-                 (cart--gmp
-                  "Click on a point/Click+Drag to include tangent (RET to stop insertion)"))
+  (let ((ctflag nil)
+        (cbuf (current-buffer)))
+    (while (setq xys (save-window-excursion
+                       (cart--gmp
+                        "Click on a point/Click+Drag to include tangent (RET to stop insertion)"
+                        1)))
+      (switch-to-buffer cbuf)
       (if ctflag
           (progn
             (if (numberp (elt xys 0))
@@ -305,6 +382,12 @@ options respectively. The user receives prompts for populating these."
                           " .. controls " (cart--fmt-point (elt xys 1))))
           (setq ctflag t)) )
       (unless ctflag (insert " -- ")))
+
+    (when cart--visual-feedback
+      (switch-to-buffer-other-frame cart--vis-buffer)
+      (delete-frame)
+      (setq cart--vis-buffer nil))
+
     (if (y-or-n-p "Insert first point in the end (manual closed path)?")
         (progn
           (cart--goto-begend)
@@ -350,8 +433,14 @@ Optional input parameter DOPTS is a string of draw options.  The user
   receives a prompt for populating these."
   (interactive "sDraw options: ")
   (insert (format "\\draw%s plot [smooth] coordinates {" (cart--optbr dopts)))
-  (while (cart-insert-point "Click on a point (RET to stop insertion)")
+  (while (cart-insert-point "Click on a point (RET to stop insertion)" 1)
     (insert " "))
+
+  (when cart--visual-feedback
+    (switch-to-buffer-other-frame cart--vis-buffer)
+    (delete-frame)
+    (setq cart--vis-buffer nil))
+
   (save-excursion
     (when (y-or-n-p "Closed path?")
       (progn
@@ -364,7 +453,7 @@ Optional input parameter DOPTS is a string of draw options.  The user
   (do-auto-fill))
 
 (defun cart-tikz-circle (&optional dopts nopts)
-  "Initiate a tikz \\draw and insert a circle by choosing center & radii.
+  "Initiate a tikz \\draw and insert a circle by choosing 2 pts along circumference.
 Start with prompting the user for draw options and node options
 added after center point.  Format for the insertion is:
         \\draw[DOPTS] (x1, y1) NOPTS circle
@@ -377,9 +466,10 @@ Optional input parameters DOPTS and NOPTS are strings of draw and node
 options respectively. The user receives prompts for populating these."
   (interactive "sDraw options: \nsNode options: ")
   (insert (format "\\draw%s " (cart--optbr dopts)))
-  (let ((xys1 (cart--gmp "Click and drag points along circumference")))
+  (let ((xys1 (cart--gmp "Click and drag (2) points along circumference" 3)))
     (when (numberp (elt xys1 0))  ;; only one point chosen
-      (setq xys1 (list xys1 (cart--gmp "Click the second point on circumference"))))
+      (setq xys1 (list xys1 (save-window-excursion
+                              (cart--gmp "Click the second point on circumference" 3)))))
 
     (insert
      (concat (cart--fmt-point
@@ -485,10 +575,11 @@ instead, just clicks, a prompt is launched asking the user to click on
 trget point."
   (interactive)
   (save-excursion
-    (let* ((xys (cart--gmp "Click & drag from start point to end point")))
+    (let* ((xys (save-excursion (cart--gmp "Click & drag from start point to end point" 3))))
       (when (numberp (elt xys 0))
-        (setq xys (list xys (cart--gmp
-                             "You had only clicked on one point. Please click target point now"))))
+        (message "%s" (numberp (elt xys 0)))
+        (setq xyn (save-excursion (cart--gmp "You had only clicked on one point. Please click target point now" 3)))
+        (setq xys (list xys xyn)))
 
       (let ((dxdy (cart--vecop '- (elt xys 1) (elt xys 0))))
         (if (region-active-p)
@@ -576,12 +667,12 @@ sum with THT.  If options are present for a node, and no rotate field
 exists, it is inserted."
   (interactive)
   (save-excursion
-    (let* ((xyref (or (cart--gmp "Click on the center of rotation (RET to use origin) ") '(0 0)))
-           (xys (cart--gmp "Click and drag the rotation target points "))
+    (let* ((xyref (or (save-window-excursion (cart--gmp "Click on the center of rotation (RET to use origin) " 1)) '(0 0)))
+           (xys (cart--gmp "Click and drag the rotation target points " 3))
            (rnds (y-or-n-p "Rotate node contents too?")))
       (when (numberp (elt xys 0))
         (setq xys (list xys (cart--gmp
-                             "You had only clicked on one point. Please click target point now"))))
+                             "You had only clicked on one point. Please click target point now" 3))))
 
       (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys))
 
@@ -675,12 +766,12 @@ product with SC.  If options are present for a node, and no scale field
 exists, it is inserted."
   (interactive)
   (save-excursion
-    (let* ((xyref (or (cart--gmp "Click on the center of scaling (RET to use origin) ") '(0 0)))
-           (xys (cart--gmp "Click and drag the scaling target points "))
+    (let* ((xyref (or (save-window-excursion (cart--gmp "Click on the center of scaling (RET to use origin) " 1)) '(0 0)))
+           (xys (cart--gmp "Click and drag the scaling target points " 3))
            (snds (y-or-n-p "Scale node contents too?")))
       (when (numberp (elt xys 0))
         (setq xys (list xys (cart--gmp
-                             "You had only clicked on one point. Please click target point now"))))
+                             "You had only clicked on one point. Please click target point now" 3))))
       (setq xys (mapcar (lambda (xy) (cart--vecop '- xy xyref)) xys)) ;; Relative Coordinates
 
       (let ((sc (apply '/ (reverse (mapcar 'cart--norm xys)))))
@@ -701,12 +792,12 @@ exists, it is inserted."
   "Move a selected point to a selected target location."
   (interactive)
   (save-excursion
-    (let ((xys (cart--gmp "Select point and drag to target"))
+    (let ((xys (cart--gmp "Select point and drag to target" 3))
           (pt (point))
           (nrm 100)
           (mval 100))
       (when (numberp (elt xys 0))
-        (setq xys (list xys (cart--gmp "Only source point selected. Click the target point"))))
+        (setq xys (list xys (cart--gmp "Only source point selected. Click the target point" 3))))
 
       (LaTeX-narrow-to-environment)
       (goto-char (point-min))
@@ -728,7 +819,7 @@ exists, it is inserted."
   "Delete a selected point. EXPERIMENTAL. USE AT OWN RISK."
   (interactive)
   (save-excursion
-    (let ((xy (cart--gmp "Select point to delete"))
+    (let ((xy (cart--gmp "Select point to delete" 3))
           (pt (point))
           (nrm 100)
           (mval 100))

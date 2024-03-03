@@ -6,6 +6,8 @@
 
 It must be noted that although =cart.el= improves the interaction/feedback while using Tikz, it is still not exactly WYSIWYG, since the latex file has to be compiled after each insertion of coordinates.
 
+_*UPDATE VER 0.2:*_ Cart.el now supports a basic Graphical Front-End based on =artist-mode=!
+
 *_Appeal to contributors_*: I am pretty new to elisp development so I'd appreciate any feedback on the package and ways to improve/standardize it.
 
 * Configuration
@@ -83,6 +85,13 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 | =C-x a s=        | =cart-scale-tikz=        | Scale region/statement.         |
 | =C-x a m=        | =cart-tikz-move-point=   | Move selected point.            |
 | =C-x a k=        | =cart-tikz-delete-point= | Delete selected point.          |
+
+*** Usage of the =artist-mode= Graphical Feedback
+1. =Cart.el= supports a minimalistic ascii-based front-end for visual user feedback.
+2. This can be enabled by calling the interactive function =cart-visual-toggle=.
+3. Note that calibration needs to be done afresh for this.
+4. This works by creating a transparent frame right on top of the current frame (opaque foreground).
+   This feature is *only supported by emacs 29.1 and later* so is not enabled by default.
 ** Examples
 #+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
@@ -94,6 +103,22 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 #+ATTR_LATEX: :width 400px
 #+ATTR_ORG: :width 100px
 [[./figs/fig4.png]]
+*** =artist-mode= Graphical Feedback
+#+CAPTION: Example 3 of a graphic drawn using =tikz= and =cart.el=. Visualized against artist front-end.
+#+ATTR_HTML: :width 400px
+#+ATTR_LATEX: :width 300px
+#+ATTR_ORG: :width 100px
+[[file:figs/fig5a.png]]
+#+CAPTION: Example 4 of a graphic drawn using =tikz= and =cart.el=. Visualized against artist front-end.
+#+ATTR_HTML: :width 200px
+#+ATTR_LATEX: :width 100px
+#+ATTR_ORG: :width 100px
+[[file:figs/fig5b.png]]
+#+CAPTION: Example 5 of a graphic drawn using =tikz= and =cart.el=. Visualized against artist front-end.
+#+ATTR_HTML: :width 300px
+#+ATTR_LATEX: :width 200px
+#+ATTR_ORG: :width 100px
+[[file:figs/fig5c.png]]
 ** Personal Tips for Beamer
 Since it is often the case in presentations to want graphical objects "pop-up" independent of the remaining content on the slide, I use the following preamble in each of my tex files:
 #+begin_src latex
@@ -122,28 +147,48 @@ I often have my tikzpicture environment setup in the following fashion so that i
 #+end_src
 * Possible Improvements
 1. Integration of Tikz/Pgf variables.
-2. Making node information for each point in draw possible as an option (instead of having to click on successive points repeatedly and have common node properties).
-3. =cart-scale-tikz= currently doesn't scales circle radius fields manually. Something more general would be better.
-4. Units are currently not supported for the node attributes (like specifying radius as =3pt=). These will be considered correctly only if provided along with a decimal point. This is an inconvenience that needs to be addressed.
-5. Some mechanism simulating real-time feedback.
+2. =cart-scale-tikz= currently doesn't scales circle radius fields manually. Something more general would be better.
+3. Units are currently not supported for the node attributes (like specifying radius as =3pt=). These will be considered correctly only if provided along with a decimal point. This is an inconvenience that needs to be addressed.
+4. Some mechanism simulating real-time feedback.
    Two ideas for this:
-   1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done. Here's elisp code to create a transparent frame without modeline & minibuffer. Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution. How expensive this will be is up for discussion.
+   1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done.
+      Here's elisp code to create a transparent frame without modeline & minibuffer.
+      Perhaps if we can invoke some emacs-native WYSIWYG drawing interface while the user clicks, this could be a solution.
+      How expensive this will be is up for discussion.
       This becomes quite attractive from Emacs 29, which allows explicitly setting background transparency independent of the foreground as follows (following only works in emacs 29+).
       #+begin_src emacs-lisp :results none
         (setq nfrm (make-frame-on-current-monitor '((fullscreen . maximized)
-                                                    (alpha-background . 80))))
+                                                    (foreground-color . "black")
+                                                    (background-color . "white")
+                                                    (cursor-color . "white")
+                                                    (alpha-background . 0))))
+
 
         (select-frame nfrm)
+        (toggle-frame-fullscreen)
         (find-file "cart.el drawing buffer")
         (artist-mode)
+        (artist-select-op-straight-line)
+        (artist-clear-buffer (current-buffer))
         (setq-local mode-line-format nil)
+
+        (setq ev (read-event))
+        (artist-down-mouse-1 ev)
+        ;; (setq xys (cart--gmc))
+        ;; (setq x1 (elt (elt xys 0) 0))
+        ;; (setq y1 (elt (elt xys 0) 1))
+        ;; (setq x2 (elt (elt xys 1) 0))
+        ;; (setq y2 (elt (elt xys 1) 1))
+
+        ;; (artist-draw-line x1 y1 x2 y2)
       #+end_src
       Coupling this with =artist-mode= on a freshly cleared buffer could be a relatively cheap solution.
+      *This has been implemented now!*
    2. Using GNOME's built-in mouse location feature. Calling the following command, for instance, will make the mouse location get highlighted each time lCtrl is pressed. This is an out-of-emacs solution, but sounds simple, if setup well.
       #+begin_src sh
         gsettings set org.gnome.desktop.interface locate-pointer true
       #+end_src
-6. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
+5. Using the ":width" property (and other properties) of the png image (=pdf-tools= displays the pages as png images) to use pdf-relative coordinates to add robustness across window size changes.
 ** Necessary Bugfixes
 No currently active bugs! ^_^
 ** Desirable features
