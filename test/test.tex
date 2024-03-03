@@ -1085,6 +1085,13 @@
 
     \draw plot [smooth] coordinates {(4.2973, 2.6575) (1.9324, 3.0137)
       (-0.1081, 3.7671) (-2.7703, 2.8904) (-3.6081, 0.7945)};
+    
+    \node[visible on=<2>, text width=0.4\textwidth] at (-0.0945,
+    -0.0137) {\begin{block}{Lognormal Distribution}
+        \begin{align*}
+          k = e^{\mu_\ell+\sigma_\ell Z},\quad Z\sim \mathcal{N}(0, 1)
+        \end{align*}
+      \end{block}};
   \end{tikzpicture}
 \end{frame}
 \end{document}
