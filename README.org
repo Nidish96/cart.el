@@ -92,6 +92,7 @@ Usage is quite straightforward. During the first time, it's recommended to follo
 3. Note that calibration needs to be done afresh for this.
 4. This works by creating a transparent frame right on top of the current frame (opaque foreground).
    This feature is *only supported by emacs 29.1 and later* so is not enabled by default.
+5. Look into the customization to see how to customize this.
 ** Examples
 #+CAPTION: Example 1 of a graphic drawn using =tikz= and =cart.el=
 #+ATTR_HTML: :width 800px
@@ -149,7 +150,7 @@ I often have my tikzpicture environment setup in the following fashion so that i
 1. Integration of Tikz/Pgf variables.
 2. =cart-scale-tikz= currently doesn't scales circle radius fields manually. Something more general would be better.
 3. Units are currently not supported for the node attributes (like specifying radius as =3pt=). These will be considered correctly only if provided along with a decimal point. This is an inconvenience that needs to be addressed.
-4. Some mechanism simulating real-time feedback.
+4. Some mechanism simulating graphical feedback.
    Two ideas for this:
    1. Must experiment with *spawning a transparent frame* spanning the whole screen until the user input is done.
       Here's elisp code to create a transparent frame without modeline & minibuffer.
@@ -157,11 +158,12 @@ I often have my tikzpicture environment setup in the following fashion so that i
       How expensive this will be is up for discussion.
       This becomes quite attractive from Emacs 29, which allows explicitly setting background transparency independent of the foreground as follows (following only works in emacs 29+).
       #+begin_src emacs-lisp :results none
+        (setq cart--vis-alpha 10)
         (setq nfrm (make-frame-on-current-monitor '((fullscreen . maximized)
                                                     (foreground-color . "black")
                                                     (background-color . "white")
                                                     (cursor-color . "white")
-                                                    (alpha-background . 0))))
+                                                    (alpha-background . ,cart--vis-alpha))))
 
 
         (select-frame nfrm)

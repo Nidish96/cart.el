@@ -52,54 +52,60 @@
 #+end_src
 * Define Minor-Mode and Global Variables
 #+begin_src emacs-lisp :tangle yes :results none
-  (defcustom cart--XY_0sl '((X . (0.0 1.0))
-                            (Y . (0.0 1.0)))
-    "These are the calibration values.
-  The behavior will be identical across sessions if these are saved."
-    :type 'cons
-    :group 'cart)
+   (defcustom cart--XY_0sl '((X . (0.0 1.0))
+                             (Y . (0.0 1.0)))
+     "These are the calibration values.
+      The behavior will be identical across sessions if these are saved."
+     :type 'cons
+     :group 'cart)
 
-  (defcustom cart--visual-feedback nil
-    "Set to t to have artist-mode based visual feedback (Experimental). Works only after Emacs 29.1."
-    :type 'cons
-    :group 'cart)
+   (defcustom cart--visual-feedback nil
+     "Set to t to have artist-mode based visual feedback (Experimental).
+      Works only after Emacs 29.1."
+     :type 'symbol
+     :group 'cart)
 
-  (defcustom cart-keymap-prefix "C-x a"
-    "The prefix for `cart-mode' key bindings."
-    :type 'string
-    :group 'cart)
+   (defcustom cart--vis-alpha 10
+     "Alpha value for artist-mode visualizer"
+     :type 'number
+     :group 'cart)
 
-  (defcustom cart--nfmt "%f"
-    "Format specifier for the numbers.  Defaults to \"%f\"."
-    :type 'string
-    :group 'cart)
+   (defcustom cart-keymap-prefix "C-x a"
+     "The prefix for `cart-mode' key bindings."
+     :type 'string
+     :group 'cart)
 
-  (defvar cart--prev-pt nil
-    "Previous point inserted in current session.")
+   (defcustom cart--nfmt "%.4f"
+     "Format specifier for the numbers.  Defaults to \"%f\"."
+     :type 'string
+     :group 'cart)
 
-  (defvar cart--vis-buffer nil
-    "Visualization buffer")
+   (defvar cart--prev-pt nil
+     "Previous point inserted in current session.")
 
-  (defun cart--key (key)
-    "Prefix keymap-prefix to KEY and construct keybinding."
-    (kbd (concat cart-keymap-prefix " " key)))
+   (defvar cart--vis-buffer nil
+     "Visualization buffer")
 
-  (define-minor-mode cart-mode
-    "CAlibrated inteRactive coordinates for Tikz."
-    :global nil
-    :group 'cart
-    :lighter " cart"
-    :keymap
-    (list (cons (cart--key "C") #'cart-calibrate)
-          (cons (cart--key "p") #'cart-insert-point)
-          (cons (cart--key "n") #'cart-tikz-node)
-          (cons (cart--key "d") #'cart-tikz-draw)
-          (cons (cart--key "e") #'cart-tikz-circle)
-          (cons (cart--key "c") #'cart-tikz-coordinates)
-          (cons (cart--key "t") #'cart-translate-tikz)
-          (cons (cart--key "r") #'cart-rotate-tikz)
-          (cons (cart--key "s") #'cart-scale-tikz)
-          (cons (cart--key "m") #'cart-tikz-move-point)))
+   (defun cart--key (key)
+     "Prefix keymap-prefix to KEY and construct keybinding."
+     (kbd (concat cart-keymap-prefix " " key)))
+
+   (define-minor-mode cart-mode
+     "CAlibrated inteRactive coordinates for Tikz."
+     :global nil
+     :group 'cart
+     :lighter " cart"
+     :keymap
+     (list (cons (cart--key "C") #'cart-calibrate)
+           (cons (cart--key "p") #'cart-insert-point)
+           (cons (cart--key "n") #'cart-tikz-node)
+           (cons (cart--key "d") #'cart-tikz-draw)
+           (cons (cart--key "e") #'cart-tikz-circle)
+           (cons (cart--key "c") #'cart-tikz-coordinates)
+           (cons (cart--key "t") #'cart-translate-tikz)
+           (cons (cart--key "r") #'cart-rotate-tikz)
+           (cons (cart--key "s") #'cart-scale-tikz)
+           (cons (cart--key "m") #'cart-tikz-move-point)))
  #+end_src
 * Define Math utility functions
 #+begin_src emacs-lisp :tangle yes
@@ -174,7 +180,9 @@
                                                  (foreground-color . "blue")
                                                  (background-color . "white")
                                                  (cursor-color . "white")
-                                                 (alpha-background . 40)))))
+                                                 (alpha-background . 10)))))
+      (set-frame-parameter nfrm 'alpha-background cart--vis-alpha)
+     
       (select-frame nfrm)
       (toggle-frame-fullscreen)
       (find-file "cart.el drawing buffer")

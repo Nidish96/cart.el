@@ -47,13 +47,19 @@
 (defcustom cart--XY_0sl '((X . (0.0 1.0))
                           (Y . (0.0 1.0)))
   "These are the calibration values.
-The behavior will be identical across sessions if these are saved."
+   The behavior will be identical across sessions if these are saved."
   :type 'cons
   :group 'cart)
 
 (defcustom cart--visual-feedback nil
-  "Set to t to have artist-mode based visual feedback (Experimental). Works only after Emacs 29.1."
-  :type 'cons
+  "Set to t to have artist-mode based visual feedback (Experimental).
+   Works only after Emacs 29.1."
+  :type 'symbol
+  :group 'cart)
+
+(defcustom cart--vis-alpha 10
+  "Alpha value for artist-mode visualizer"
+  :type 'number
   :group 'cart)
 
 (defcustom cart-keymap-prefix "C-x a"
@@ -61,7 +67,7 @@ The behavior will be identical across sessions if these are saved."
   :type 'string
   :group 'cart)
 
-(defcustom cart--nfmt "%f"
+(defcustom cart--nfmt "%.4f"
   "Format specifier for the numbers.  Defaults to \"%f\"."
   :type 'string
   :group 'cart)
@@ -161,7 +167,7 @@ of the vector."
                                                (foreground-color . "blue")
                                                (background-color . "white")
                                                (cursor-color . "white")
-                                               (alpha-background . 40)))))
+                                               (alpha-background . cart--vis-alpha)))))
     (select-frame nfrm)
     (toggle-frame-fullscreen)
     (find-file "cart.el drawing buffer")
