@@ -1,6 +1,10 @@
 #+TITLE: =cart.el= : CAlibrated inteRactive coordinates for Tikz
 #+STARTUP: indent
 
+An emacs package to help streamline the preparation of beamer presentations with tikz graphical elements. 
+The user can input tikz coordinates through mouse clicks which get automatically transformed into tikz-sensible coordinates. 
+These include the simplest operations of node insertions to transformations (rotations/scaling/translations) to actually drawing curves with tikz!
+
 * Introduction
 =cart.el= defines interactive elisp functions for obtaining coordinates for tikz commands graphically following a calibration.
 
