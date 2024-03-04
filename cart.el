@@ -167,7 +167,9 @@ of the vector."
                                                (foreground-color . "blue")
                                                (background-color . "white")
                                                (cursor-color . "white")
-                                               (alpha-background . cart--vis-alpha)))))
+                                               (alpha-background . 10)))))
+    (set-frame-parameter nfrm 'alpha-background cart--vis-alpha)
+
     (select-frame nfrm)
     (toggle-frame-fullscreen)
     (find-file "cart.el drawing buffer")
