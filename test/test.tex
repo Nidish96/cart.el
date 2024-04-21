@@ -28,7 +28,7 @@
 
   \begin{tikzpicture}[overlay,remember picture]
     \pgftransformshift{\pgfpointanchor{current page}{center}}
-    \draw (0,0) -- (2,2);  % Used for calibration
+    \draw (0,0) -- (1,1);  % Used for calibration
     
     \draw[fill=red](-1.261745, -2.643836)circle[radius=1pt]
     --
@@ -57,7 +57,7 @@
     (0.26297572483221443,0.220339)circle[radius=1pt] --
     (0.7296417248322145,0.135593)circle[radius=1pt] --
     (0.7796417248322145,-0.135593)circle[radius=1pt] --
-    (0.9629757248322144,-0.050847)circle[radius=1pt] --
+    (1.0658, -0.9863)circle[radius=1pt] --
     (1.087248, 0.150685)circle[radius=1pt] --
     (1.2796417248322145,0.186441)circle[radius=1pt] --
     (2.0796417248322143,0.186441)circle[radius=1pt] --
@@ -125,6 +125,9 @@
       \item Nodes can be inserted using \texttt{cart-tikz-node}
       \item Draw can be inserted using \texttt{cart-tikz-draw}
       \end{itemize}};
+
+    \node at (3.2368, -0.2877) {hello};
+    
   \end{tikzpicture}
 \end{frame}
 
@@ -1054,6 +1057,9 @@
       \item Node value scaling through the \texttt{scale} fields
         also supported
       \end{itemize}};
+
+
+    
   \end{tikzpicture}
 \end{frame}
 
@@ -1127,6 +1133,8 @@
       -0.7467) (-0.3699, -1.0800) (-0.3973, -1.9600) (-1.1507,
       -2.4133)
       (-1.2329, -3.0933) (-1.0137, -3.6933)};
+
+    \draw (0,0) -- (1,1);
   \end{tikzpicture}
 \end{frame}
 
